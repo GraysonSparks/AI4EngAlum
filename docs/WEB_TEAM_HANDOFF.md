@@ -137,6 +137,7 @@ python test_contact.py               # 18 checks: form, consent, spam limits, /u
 python test_notify.py                # 13 checks: email and webhook with a fake server
 python test_chatlog.py               # 28 checks: redaction and the saved-chat database
 python test_recap.py                 # 20 checks: the monthly recap
+python test_priority.py              # 10 checks: primary sources matched first
 python eval_models.py qwen3.5:9b     # 63 scored questions against the real model
 ```
 

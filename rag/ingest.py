@@ -15,7 +15,8 @@ def main():
     chunks, doc = all_chunks()
     print(f"Content doc: {doc['path'].name}")
     print(f"Chunks: {len(chunks)} "
-          f"({', '.join(f'{k}={sum(c['kind'] == k for c in chunks)}' for k in ('curated', 'example', 'staff', 'department'))})")
+          f"({', '.join(f'{k}={sum(c['kind'] == k for c in chunks)}' for k in ('curated', 'example', 'staff', 'department'))}; "
+          f"primary={sum(c['tier'] == 'primary' for c in chunks)})")
 
     embeddings = embed([c["text"] for c in chunks], DOC_PREFIX)
 
@@ -30,7 +31,7 @@ def main():
         ids=[c["id"] for c in chunks],
         documents=[c["text"] for c in chunks],
         embeddings=embeddings,
-        metadatas=[{"title": c["title"], "kind": c["kind"],
+        metadatas=[{"title": c["title"], "kind": c["kind"], "tier": c["tier"],
                     "sources": " | ".join(c["sources"])} for c in chunks],
     )
     print(f"Wrote {collection.count()} chunks to {config.CHROMA_DIR}")

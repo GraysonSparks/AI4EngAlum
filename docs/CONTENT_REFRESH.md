@@ -25,6 +25,10 @@ Keep the structure the code reads:
 - Section headings ("Recommended Response Rules", "Proposed RAG Chunks", "Example Questions and
   Grounded Answers", …) must keep their exact wording.
 - Either the .odt or the .docx can be edited. The assistant uses whichever was saved last.
+- Sections in this document are **primary** sources: when a question matches both a section here
+  and a scraped page about equally, the section here is used first. To make a section count less
+  (for example, a general overview that should not outrank a specific department page), add a line
+  `Priority: secondary` to it. `Priority: primary` does the opposite. Rebuild after the change.
 
 Check what will be indexed: `python content.py` prints every chunk exactly as the assistant sees it.
 

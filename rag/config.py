@@ -26,6 +26,19 @@ TOP_K = int(os.environ.get("TOP_K", "4"))
 # How many earlier messages (user + assistant) from the live conversation are used per request.
 # The client sends them with each request; only the newest message and its answer are saved (below).
 HISTORY_MESSAGES = int(os.environ.get("HISTORY_MESSAGES", "6"))
+# Source priority (see rag.py retrieve()). Chunks from PRIMARY_KINDS are the highest-fidelity
+# sources: by default the content document Advancement approved (its sections, "curated", and
+# example answers, "example"). The scraped staff directory ("staff") and department pages
+# ("department") are secondary. A secondary chunk ranks as if it were SECONDARY_PENALTY farther
+# away, so a primary chunk comes first unless the secondary one is clearly closer. A section of the
+# content document can override its kind with a "Priority: primary" or "Priority: secondary" line.
+# SECONDARY_PENALTY=0 turns priority off; a large value (1) always puts every relevant primary
+# chunk before every secondary one.
+PRIMARY_KINDS = {k.strip() for k in os.environ.get("PRIMARY_KINDS", "curated,example").split(",")
+                 if k.strip()}
+SECONDARY_PENALTY = float(os.environ.get("SECONDARY_PENALTY", "0.05"))
+# How many nearest chunks are compared before the TOP_K best by priority are kept.
+CANDIDATES = int(os.environ.get("CANDIDATES", "12"))
 # Cosine distance (0 = identical). Chunks farther than this are treated as "not relevant";
 # if nothing is closer, the bot returns the fallback without calling the chat model.
 MAX_DISTANCE = float(os.environ.get("MAX_DISTANCE", "0.5"))

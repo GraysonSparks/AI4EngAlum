@@ -1,7 +1,8 @@
 """Turn the curated giving doc and the scraped pages into chunks for Chroma.
 
-Every chunk is a dict: {"id", "text", "title", "sources" (list of URLs), "kind"}.
+Every chunk is a dict: {"id", "text", "title", "sources" (list of URLs), "kind", "tier"}.
 "text" is what gets embedded; sources are stored as metadata so the bot can cite them.
+"tier" is "primary" or "secondary" (see config.PRIMARY_KINDS and tier()).
 """
 
 import csv
@@ -17,6 +18,8 @@ BEHAVIOR_NOTE = re.compile(r"^The chatbot\b", re.I)
 URL = re.compile(r"https?://\S+")
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 PHONE = re.compile(r"\b\d{3}[.-]\d{3}[.-]\d{4}\b")
+# A line in a content-document section that sets its priority, e.g. "Priority: secondary".
+PRIORITY_LINE = re.compile(r"^priority\s*:\s*(primary|secondary)\s*$", re.I)
 
 # Headings in the curated doc that delimit the sections we read.
 RULES_HEADING = "Recommended Response Rules"
@@ -108,6 +111,8 @@ def read_doc_sections(path: Path | None = None) -> dict:
                 chunks.append(current)
             elif current is None:
                 continue
+            elif PRIORITY_LINE.match(line):
+                current["priority"] = PRIORITY_LINE.match(line).group(1).lower()
             elif line.lower().startswith("source"):
                 current["sources"] += URL.findall(line)
             elif URL.fullmatch(line):
@@ -267,9 +272,18 @@ def department_chunks() -> list[dict]:
     return chunks
 
 
+def tier(chunk: dict) -> str:
+    """"primary" for the highest-fidelity sources, matched first; "secondary" for the rest."""
+    if chunk.get("priority"):
+        return chunk["priority"]
+    return "primary" if chunk["kind"] in config.PRIMARY_KINDS else "secondary"
+
+
 def all_chunks() -> tuple[list[dict], dict]:
     doc = read_doc_sections()
     chunks = doc["chunks"] + doc["examples"] + staff_chunks() + department_chunks()
+    for c in chunks:
+        c["tier"] = tier(c)
     ids = [c["id"] for c in chunks]
     dupes = {i for i in ids if ids.count(i) > 1}
     if dupes:
@@ -284,4 +298,4 @@ if __name__ == "__main__":
     print("Skipped behavior-only examples: " +
           ", ".join(f"#{e['num']}" for e in doc["skipped_examples"]))
     for c in chunks:
-        print(f"\n[{c['id']}] ({c['kind']}) sources={c['sources']}\n{c['text']}")
+        print(f"\n[{c['id']}] ({c['kind']}, {c['tier']}) sources={c['sources']}\n{c['text']}")

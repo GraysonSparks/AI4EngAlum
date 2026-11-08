@@ -28,6 +28,7 @@ python test_contact.py           # checks the follow-up form, spam protection an
 python test_notify.py            # checks notifications and unanswered emails with fake SMTP/webhook (13 checks)
 python test_chatlog.py           # checks redaction and the saved-chat database (28 checks)
 python test_recap.py             # checks the monthly recap, its storage and email (20 checks)
+python test_priority.py          # checks that primary sources are matched first (10 checks)
 python recap.py --print          # last month's recap on screen (nothing stored or sent)
 ```
 
@@ -42,6 +43,24 @@ python recap.py --print          # last month's recap on screen (nothing stored 
 | Same doc, "Example Questions and Grounded Answers" | 15 | One per numbered Q&A. Examples that only describe bot behavior ("The chatbot should...") are skipped; the response rules cover them. An example without its own URL takes the source of the curated chunk it overlaps with most (run `python content.py` to see the matches). |
 | Staff directory (`scraped_pages/eng_auburn_edu_admin_development_index_html.txt`) | 15 | One per person, role description first. |
 | Department campaign pages (`scraped_pages/give_auburn_edu_campaigns_*.txt`) | 10 | Only the department-specific paragraphs; shared boilerplate dropped. The department's advancement liaison (parsed from the directory) is appended. |
+
+**Source priority.** Not all sources are equal. The content document is what Advancement approved,
+so its sections and example answers are **primary**; the scraped staff directory and department
+pages are **secondary**. `retrieve()` takes the 12 nearest chunks (`CANDIDATES`), ranks each
+secondary chunk as if it were `SECONDARY_PENALTY` (0.05) farther away, and keeps the best
+`TOP_K` (4). So a primary chunk is matched first unless a secondary one is clearly closer, and the
+model sees primary chunks first in its context. Real distances still decide `MAX_DISTANCE` and
+citations.
+
+| To | Do this |
+|---|---|
+| Make one content-document section secondary (or primary) | Add a line `Priority: secondary` (or `primary`) to that section, then `python ingest.py`. |
+| Treat a whole kind as primary | `PRIMARY_KINDS=curated,example,staff` (kinds: `curated`, `example`, `staff`, `department`), then `python ingest.py`. |
+| Always use every relevant primary chunk before any secondary one | `SECONDARY_PENALTY=1` |
+| Turn priority off | `SECONDARY_PENALTY=0` |
+
+`python content.py` shows each chunk's tier; `python test_priority.py` runs 10 checks without the
+models.
 
 The doc's **Recommended Response Rules** become the core of the system prompt. `rag.py` adds
 fixed instructions for grounding, the tax/legal refusal, prompt-injection handling, and the fallback contact.

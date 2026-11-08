@@ -24,7 +24,7 @@ How to host it: [`WEB_TEAM_HANDOFF.md`](WEB_TEAM_HANDOFF.md). How to update the 
 |---|---|---|
 | `app.py` | The web server. Handles `/chat`, `/contact` (follow-up form), `/unanswered`, `/health`, `/reload-rules`, and serves `chat-widget.js` and the test site. Started with `uvicorn app:app`. | ✅ Needed |
 | `rag.py` | The core. Turns a question into a search, finds the closest approved content, asks the model, checks every link against the sources, and adds the staff contact cards. Also holds the fixed replies that skip the model ("Who can I contact?", "Can someone call me?"). | ✅ Needed |
-| `config.py` | Every setting and its default (models, paths, contact details, email). Each one can be overridden with an environment variable. | ✅ Needed |
+| `config.py` | Every setting and its default (models, paths, contact details, email, source priority). Each one can be overridden with an environment variable. | ✅ Needed |
 | `content.py` | Reads the content document and the scraped pages and cuts them into chunks. Used by `ingest.py`, and by `rag.py` for the response rules. `python content.py` prints every chunk. | ✅ Needed |
 | `routing.py` | Builds the "who do I talk to about Aerospace?" table from the staff directory page each time the server starts. `python routing.py` prints it and warns if a contact went stale. | ✅ Needed |
 | `leads.py` | Saves a follow-up form submission (only with consent) to `CONTACT_REQUESTS_FILE`. | ✅ Needed |
@@ -39,6 +39,7 @@ How to host it: [`WEB_TEAM_HANDOFF.md`](WEB_TEAM_HANDOFF.md). How to update the 
 | `test_notify.py` | 13 checks of the emails, using a fake mail server. | 🧪 Testing |
 | `test_chatlog.py` | 28 checks of redaction and the saved-chat database. | 🧪 Testing |
 | `test_recap.py` | 20 checks of the monthly recap, its storage and email. | 🧪 Testing |
+| `test_priority.py` | 10 checks that primary sources (the content document) are matched before scraped pages. | 🧪 Testing |
 | `run_test_prompts.py` | Prints answers to the content document's "Suggested Initial Test Prompts" for reading by eye. | 🧪 Testing |
 | `requirements-windows.txt` | Package versions for the Windows laptop. | 💻 Laptop |
 | `README.md` | Developer setup and commands. | Reference |

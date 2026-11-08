@@ -15,7 +15,7 @@ follow-up requests live in `%LOCALAPPDATA%\AI4EngAlum`.
 
 | Script | What it does |
 |---|---|
-| `Setup.bat` | Run once. Installs uv, Python 3.12.14, the packages, Ollama 0.40.6 and the models (about 7 GB), builds the index, then runs `test_contact.py`, `test_notify.py`, `test_chatlog.py`, `test_recap.py` and the 63-case `eval_models.py`. Ends with SETUP COMPLETE in green, or lists the checks that failed. Safe to run again. `Setup.bat -SkipEval` skips the eval. |
+| `Setup.bat` | Run once. Installs uv, Python 3.12.14, the packages, Ollama 0.40.6 and the models (about 7 GB), builds the index, then runs `test_contact.py`, `test_notify.py`, `test_chatlog.py`, `test_recap.py`, `test_priority.py` and the 63-case `eval_models.py`. Ends with SETUP COMPLETE in green, or lists the checks that failed. Safe to run again. `Setup.bat -SkipEval` skips the eval. |
 | `Start.bat` | Starts Ollama, loads the models and reports **100% GPU** for each (yellow warning if part of a model is on the CPU), starts the server, and opens http://127.0.0.1:8000/. Press **Ctrl+C** in its window to stop everything. |
 | `Stop.bat` | Stops the server, unloads the models, quits Ollama, then checks no Ollama process is left. Green **STOPPED. The model is not running and its GPU memory is free.** means it is really off; red means something is still running. |
 | `Status.bat` | Shows what is running right now and changes nothing. |

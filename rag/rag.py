@@ -188,14 +188,23 @@ class Assistant:
         self.system_prompt = build_system_prompt(doc["rules"])
 
     def retrieve(self, question: str) -> list[dict]:
+        """The TOP_K best chunks, primary sources first. The CANDIDATES nearest chunks are ranked by
+        distance, with SECONDARY_PENALTY added to secondary ones, so a primary chunk wins unless a
+        secondary one is clearly closer. "distance" stays the real distance, so MAX_DISTANCE and
+        citations are not affected by priority."""
         res = self.collection.query(query_embeddings=embed([question], QUERY_PREFIX),
-                                    n_results=config.TOP_K)
-        return [
-            {"id": id_, "text": doc, "distance": dist, "title": meta["title"],
-             "sources": meta["sources"].split(" | ")}
-            for id_, doc, dist, meta in zip(res["ids"][0], res["documents"][0],
-                                            res["distances"][0], res["metadatas"][0])
-        ]
+                                    n_results=max(config.TOP_K, config.CANDIDATES))
+        hits = []
+        for id_, doc, dist, meta in zip(res["ids"][0], res["documents"][0],
+                                        res["distances"][0], res["metadatas"][0]):
+            # Indexes built before tiers existed have no "tier"; fall back to the kind.
+            tier = meta.get("tier") or ("primary" if meta.get("kind") in config.PRIMARY_KINDS
+                                        else "secondary")
+            hits.append({"id": id_, "text": doc, "distance": dist, "title": meta["title"],
+                         "sources": meta["sources"].split(" | "), "tier": tier,
+                         "rank": dist + (config.SECONDARY_PENALTY if tier == "secondary" else 0)})
+        hits.sort(key=lambda h: h["rank"])
+        return hits[:config.TOP_K]
 
     def standalone_question(self, question: str, history: list[dict]) -> str:
         """Resolve a follow-up ("who handles that?") into a question the search can use."""
@@ -249,7 +258,7 @@ class Assistant:
             return {"answer": GENERAL_CONTACT_REPLY, "sources": [routing.STAFF_DIRECTORY_URL],
                     "chunks": [], "fallback": False, "contacts": routing.contact_cards(routed),
                     "retrieved": hits, "search_query": search_query}
-        best = relevant[0]["distance"] if relevant else config.MAX_DISTANCE
+        best = min((h["distance"] for h in relevant), default=config.MAX_DISTANCE)
         relevant = [routing.as_hit(m, best) for m in routed] + relevant
         if not relevant:
             return {"answer": config.FALLBACK_REPLY, "sources": [], "chunks": [],
@@ -268,7 +277,7 @@ class Assistant:
             + [{"role": "user", "content": user_msg}],
             REPLY_SCHEMA)
 
-        best = relevant[0]["distance"]
+        best = min(h["distance"] for h in relevant)
         sources = list(dict.fromkeys(
             s for h in relevant if h["distance"] <= best + CITE_MARGIN for s in h["sources"]))
         all_context_urls = list(dict.fromkeys(s for h in relevant for s in h["sources"]))
