@@ -18,7 +18,20 @@ file and marks which ones a deployment needs.
   `nomic-embed-text` for search. No question is sent to OpenAI or any other outside service.
 
 It has **no connection to OAK or any donor record**. It saves each question and answer with
-personal numbers and emails removed (`CHAT_LOG`, details in [`../rag/README.md`](../rag/README.md#saved-chats-chatlogpy-redactpy)).
+Social Security, card and account numbers removed; phone numbers and emails are kept (`CHAT_LOG`, details in [`../rag/README.md`](../rag/README.md#saved-chats-chatlogpy-redactpy)).
+
+## What is live and what is ready
+
+Some features need things only the host can provide, so they are built and tested but stay off
+until the assistant is hosted:
+
+| Feature | Status now | How it was tested | To turn it on |
+|---|---|---|---|
+| Emails to Ed (follow-up requests, unanswered questions, monthly recap) | Off: `NOTIFY_CHANNEL=none`, nothing is sent | `test_notify.py` and `test_recap.py` send to a fake mail server and check each message, its recipients and the recap's CSV attachment. No real email has been sent yet. | An Auburn mail relay: set `NOTIFY_CHANNEL=email` and the `SMTP_*` settings below, then submit one test form. |
+| Saved chats and recaps | On, to a local SQLite file | `test_chatlog.py` and `test_recap.py` use a temporary SQLite file | Nothing, or `DATABASE_URL` to use a PostgreSQL server instead |
+| PostgreSQL | Ready, not used | The SQL is written for both; only SQLite has been run | `pip install "psycopg[binary]"` and `DATABASE_URL=postgresql://...` |
+| Monthly recap | Made on the 1st, stored; emailed only when email is on | `test_recap.py` | Comes with email |
+| The widget on eng.auburn.edu/giving | Only on the local test copy of the pages | Laptop and desktop | The script tag below |
 
 ## Adding it to a page
 
@@ -115,11 +128,12 @@ Check email delivery once after setup by submitting the follow-up form on the te
 
 ## Security and privacy summary
 
-- No donor data. Each question and answer is saved with emails, phone, Social Security, card and
-  other long numbers removed, under a random conversation ID; no IP address or browser details.
-  Restrict who can read the database. The last few turns sent with each request are used for that
-  one answer and dropped.
-- The only stored contact details are from a follow-up form the visitor chose to submit with consent.
+- No donor data. Each question and answer is saved with Social Security, card, account, routing
+  and other sensitive numbers removed, under a random conversation ID; no IP address or browser
+  details. Phone numbers and emails a visitor types are kept so staff can follow up, so restrict who
+  can read the database. The last few turns sent with each request are used for that one answer
+  and dropped.
+- Follow-up form submissions hold the name, email and phone the visitor chose to send, with consent.
 - Spam protection on the form and the unanswered report: per-address rate limit (held in memory),
   a hidden honeypot field, and a minimum time the form must be open.
 - Every answer is checked in code: links that are not from the approved sources are replaced, and a
@@ -139,8 +153,8 @@ it when the backend can't be reached).
 cd rag
 python test_contact.py               # 18 checks: form, consent, spam limits, /unanswered
 python test_notify.py                # 13 checks: email and webhook with a fake server
-python test_chatlog.py               # 28 checks: redaction and the saved-chat database
-python test_recap.py                 # 20 checks: the monthly recap
+python test_chatlog.py               # 45 checks: redaction and the saved-chat database
+python test_recap.py                 # 22 checks: the monthly recap
 python test_priority.py              # 10 checks: primary sources matched first
 python eval_models.py qwen3.5:9b     # 63 scored questions against the real model
 ```

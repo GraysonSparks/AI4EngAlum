@@ -80,7 +80,7 @@ seconds, with a link to the official page it came from.
 
    ![A follow-up question showing the Mechanical Engineering contact](images/05_follow_up_card.jpg)
 9. **Clearing.** The **Clear** button erases the conversation from the screen and starts a new one.
-   Reloading or leaving the page does the same. Saved messages (personal numbers removed) stay in
+   Reloading or leaving the page does the same. Saved messages (sensitive numbers removed) stay in
    the database for the monthly recap.
 
 ---
@@ -125,8 +125,8 @@ questions: when they close or clear the chat, leave the page, or stop asking for
 > - Can I donate cryptocurrency to the College of Engineering?
 > - Does Auburn Engineering accept gifts of real estate?
 >
-> Only the question text is sent, with personal numbers and emails removed. The visitor is
-> anonymous and the rest of the conversation is not included.
+> Only the question text is sent, with Social Security, card and account numbers removed. The rest
+> of the conversation is not included.
 
 **What to do:** nothing urgent. The visitor was already given Ed's details. Once a month, look for
 questions that keep coming up. Each one is a candidate for a new answer in the content document
@@ -153,8 +153,12 @@ assistant's database.
 > Most-asked questions: ...
 > Most-cited pages: ...
 
+If a visitor typed their phone number or email into the chat instead of using the form, the recap
+lists that message under "Visitors who typed a phone number or email in the chat", so someone can
+follow up.
+
 The email has a spreadsheet (CSV) attached with every question and answer of the month, with
-personal numbers and emails already removed. It opens in Excel.
+Social Security, card and account numbers already removed. It opens in Excel.
 
 **What to do:** read the "could not answer" list. A question that comes up several times is the best
 candidate for a new answer in the content document (section 5).
@@ -265,12 +269,13 @@ These are settings, not code changes:
 
 **Can it see donor information?** No. It has no connection to OAK or any donor database.
 
-**Does it store what visitors type?** Yes, with personal data removed. Each question and answer is
-saved so Advancement can see what visitors ask. Before saving, email addresses, phone numbers,
-Social Security numbers, card numbers and other long numbers are replaced with labels such as
-`[PHONE]`. No name, IP address or browser details are saved. The chat box tells visitors this.
-A follow-up form a visitor chooses to submit keeps their name, email and phone, with consent.
-Unanswered-question emails contain only the question text, with personal numbers removed.
+**Does it store what visitors type?** Yes, with sensitive numbers removed. Each question and answer
+is saved so Advancement can see what visitors ask. Before saving, Social Security, card, bank account
+and routing numbers, PINs, security codes, passwords, ID numbers and other long numbers are replaced
+with labels such as `[SSN]`. Phone numbers and email addresses are kept, so a visitor who types
+them can be contacted. No IP address or browser details are saved. The chat box tells visitors that
+chats are saved and asks them not to share card or Social Security numbers. Unanswered-question
+emails contain only the question text, with the same numbers removed.
 
 **Can someone make it say something inappropriate?** It is limited to Engineering giving and declines
 everything else, including instructions to "ignore its rules". Links it gives are checked against the

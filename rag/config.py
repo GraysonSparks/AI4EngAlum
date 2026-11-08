@@ -68,10 +68,12 @@ FALLBACK_REPLY = (
     f"{FALLBACK_CONTACT}. {FALLBACK_INVITE}"
 )
 
-# Saved chats (see chatlog.py). Each message and answer is saved with personal numbers and emails
-# removed (redact.py). CHAT_LOG=0 turns saving off. DATABASE_URL=postgresql://... saves to a
+# Saved chats (see chatlog.py). Each message and answer is saved with Social Security, card, account
+# and other sensitive numbers removed (redact.py). Phone numbers and emails are kept, so a visitor
+# who types them can be contacted; REDACT_CONTACT_DETAILS=1 removes those too. CHAT_LOG=0 turns saving off. DATABASE_URL=postgresql://... saves to a
 # PostgreSQL server instead of the local SQLite file.
 CHAT_LOG = os.environ.get("CHAT_LOG", "1") == "1"
+REDACT_CONTACT_DETAILS = os.environ.get("REDACT_CONTACT_DETAILS", "0") == "1"
 CHAT_LOG_DB = Path(os.environ.get("CHAT_LOG_DB", RAG_DIR / "data" / "chats.sqlite3"))
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 CHAT_LOG_RETENTION_DAYS = int(os.environ.get("CHAT_LOG_RETENTION_DAYS", "400"))

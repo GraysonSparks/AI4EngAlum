@@ -26,8 +26,8 @@ python eval_models.py qwen3.5:9b gemma4:12b   # scored comparison of chat models
 python routing.py                # print the staff routing table built from the directory
 python test_contact.py           # checks the follow-up form, spam protection and /unanswered (18 checks)
 python test_notify.py            # checks notifications and unanswered emails with fake SMTP/webhook (13 checks)
-python test_chatlog.py           # checks redaction and the saved-chat database (28 checks)
-python test_recap.py             # checks the monthly recap, its storage and email (20 checks)
+python test_chatlog.py           # checks redaction and the saved-chat database (45 checks)
+python test_recap.py             # checks the monthly recap, its storage and email (22 checks)
 python test_priority.py          # checks that primary sources are matched first (10 checks)
 python recap.py --print          # last month's recap on screen (nothing stored or sent)
 ```
@@ -142,8 +142,7 @@ Advancement wanted to see which donor questions the assistant can't answer. When
 memory and posts them to `POST /unanswered` once the visitor is done: on closing or clearing the
 chat, leaving the page, or after 10 minutes without a new one. The server checks each signature,
 so only questions the assistant really failed on are sent, then emails them to `NOTIFY_TO` (Ed).
-The email has only the question text, with personal numbers and emails removed: no name, address
-or other turns.
+The email has only the question text, with sensitive numbers removed: no address or other turns.
 
 A weekly digest would mean keeping question text on the server until it is sent. Say so if
 Advancement prefers that; it's a small change in `notify.py`.
@@ -183,7 +182,7 @@ start the backend with `CORS_ORIGINS=<that origin>`.
 ## Conversation memory
 
 The assistant follows up within a conversation ("Who is the liaison for *that* department?").
-Each new message and its answer is saved with personal data removed (see "Saved chats" below).
+Each new message and its answer is saved with sensitive numbers removed (see "Saved chats" below).
 (The follow-up form above is separate: it stores only what the visitor submits in it.)
 
 - **Browser:** the widget keeps the conversation in page memory only. Nothing goes to localStorage,
@@ -220,27 +219,36 @@ that chats are saved.
 
 A failed save is logged and never stops the answer.
 
-**Redaction.** Visitors are not asked for personal data, but some type it anyway. Before a row is
-saved (and before an unanswered question is emailed), `redact.py` replaces:
+**Redaction.** Visitors are not asked for sensitive data, but some type it anyway. Before a row is
+saved (and before an unanswered question is emailed), `redact.py` replaces sensitive numbers with a
+label. **Phone numbers and email addresses are kept**, so a visitor who types "call me at
+334-555-0123" in the chat can be contacted; the monthly recap lists those messages.
+`REDACT_CONTACT_DETAILS=1` removes them too (`[PHONE]`, `[EMAIL]`).
 
-| Found | Saved as | Pattern |
-|---|---|---|
-| Email address | `[EMAIL]` | `name@domain.tld` |
-| Social Security number | `[SSN]` | `123-45-6789` or `123 45 6789` |
-| Card number | `[CARD NUMBER]` | 13 to 19 digits, with or without spaces or dashes |
-| Phone number | `[PHONE]` | US formats: `334-555-0123`, `(334) 555-0123`, `+1 334.555.0123` |
-| Any other long number | `[NUMBER]` | 7 or more digits in a row: account, routing and ID numbers |
+People type the same number in many ways, so it is checked in this order:
 
-Short numbers stay, because they are useful and not personal: gift amounts (`$5,000`), class years,
-course numbers, dates and percentages. Removing *every* number would destroy those, and an email
-like `jdoe1985@...` would still be half there, so the patterns above are used instead. Emails and
-phone numbers that are already public in the approved content (Ed, the giving office, staff in the
-directory) are kept, so saved answers stay readable. A visitor who wants to be contacted uses the
-follow-up form, which keeps their email and phone with consent.
+| Step | Found | Saved as | Examples caught |
+|---|---|---|---|
+| 1 | Email address | kept | `jdoe1985@gmail.com` (set aside first, so its digits are never read as a number) |
+| 2 | A number after a word that names it | `[SSN]`, `[ACCOUNT NUMBER]`, `[ROUTING NUMBER]`, `[CARD NUMBER]`, `[SECURITY CODE]`, `[PIN]`, `[ID NUMBER]` | `SSN 123456789`, `last four of my social 6789`, `account # 0012-3456-78`, `my account number is 3345550123`, `routing 062000019`, `visa ending in 1234`, `cvv 123`, `PIN 4321`, `driver's license 1234567`, `student id 903123456` |
+| 2 | A password | `[PASSWORD]` | `password: hunter2` |
+| 3 | Social Security number | `[SSN]` | `123-45-6789`, `123 45 6789`, `123.45.6789` |
+| 4 | Card number | `[CARD NUMBER]` (Luhn-valid) or `[NUMBER]` | `4111 1111 1111 1111`, `4111111111111111`, Amex `3782 822463 10005` |
+| 5 | Phone number | kept | `(334) 555-0123`, `334.555.0123`, `+1 334 555 0123`, `3345550123`, `555-0123`, `1-800-555-0199 ext. 12`, `+44 20 7946 0958` |
+| 6 | Any other long number | `[NUMBER]` | 8+ digits in a row (`123456789`), or digit groups of 9+ digits in total (`0012 3456 7890`) |
 
-Not caught: names, street addresses and dates of birth (no reliable pattern, and removing names
-would also remove the staff names the assistant gives). `python redact.py "<text>"` shows what a
-message would be saved as; `python test_chatlog.py` runs 28 checks.
+Step 2 comes before step 5, so an account number shaped like a phone number is still removed when
+the visitor names it. Each word needs a minimum number of digits after it (4 for most, 9 for a
+routing number), so "card 25" or "the 2026 social" are left alone.
+
+Short numbers stay, because they are useful and not personal: gift amounts (`$5,000`,
+`$1000000`), class years, course numbers (`ELEC 3810`), dates (`12/31/2026`), year ranges and
+percentages. Removing *every* number would destroy those and also the phone numbers we want, so the
+patterns above are used instead.
+
+Not caught: numbers written as words ("one two three"), names, street addresses and dates of birth.
+`python redact.py "<text>"` shows what a message would be saved as; `python test_chatlog.py` runs
+45 checks.
 
 ## Monthly recap (`recap.py`)
 

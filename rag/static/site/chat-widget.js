@@ -17,8 +17,9 @@
  * Privacy: in the browser, the conversation lives only in this page's memory. It is never written
  * to localStorage, sessionStorage, or cookies, and it is gone on reload, navigation, tab close, or
  * "Clear". Recent turns are sent with each request so the assistant can follow up. The server
- * saves each new message and answer with card, Social Security, phone and other long numbers and
- * email addresses removed, grouped by a random conversation ID made here (new on each "Clear").
+ * saves each new message and answer with card, Social Security, account and other sensitive
+ * numbers removed (phone numbers and emails are kept), grouped by a random conversation ID made here
+ * (new on each "Clear").
  * The footer tells visitors this (SAVE_NOTICE).
  *
  * The widget labels itself as AI in the header, greeting and reply labels. When the assistant can't
@@ -45,7 +46,7 @@
   const TEASER_KEY = 'aug-chat-teaser-dismissed'; // the only thing stored: a yes/no UI flag
   const HISTORY_SENT = 6; // most recent messages sent with each request
   // Shown in the footer. If the server runs with CHAT_LOG=0, set this to ''.
-  const SAVE_NOTICE = 'Chats are saved to improve answers, with personal numbers and emails removed. Please don\'t share card or Social Security numbers.';
+  const SAVE_NOTICE = 'Chats are saved to improve answers. Card, Social Security and account numbers are removed; please don\'t share them.';
   const TOP_BUTTON_MID = 55; // px from the viewport bottom to the center of the site's back-to-top button
   const SCALE = Number(script && script.dataset.scale) || 1.1; // widget size; 1 = the original design
   // Multiply every px size of 3 or more in the styles by SCALE. 1-2 px borders stay sharp, and the

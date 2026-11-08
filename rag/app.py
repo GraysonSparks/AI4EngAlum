@@ -6,7 +6,8 @@ Then open http://localhost:8000/ for the test site (static/site/), or POST {"mes
 POST /contact stores a follow-up request from the widget's contact form (see leads.py) and notifies
 staff on the channel set by NOTIFY_CHANNEL (see notify.py). POST /unanswered emails the giving
 questions a finished chat couldn't answer. Each /chat message and answer is saved with personal
-numbers and emails removed (see chatlog.py and redact.py; CHAT_LOG=0 turns this off).
+card, account and other sensitive numbers removed; phone numbers and emails are kept (see
+chatlog.py and redact.py; CHAT_LOG=0 turns saving off).
 """
 
 import hashlib
@@ -53,7 +54,7 @@ if origins:
 
 assistant = Assistant()
 # Emails and phone numbers already in the approved content (staff contacts, the giving office) are
-# public, so redaction leaves them in the saved answers.
+# public. Only used with REDACT_CONTACT_DETAILS=1, so those stay in the saved answers.
 PUBLIC_CONTACTS = redact.public_values(
     assistant.collection.get(include=["documents"])["documents"]
     + [config.FALLBACK_EMAIL, config.FALLBACK_PHONE, config.GIVING_OFFICE_EMAIL,
@@ -190,10 +191,9 @@ def contact(req: ContactRequest, request: Request, response: Response):
     if req.website or req.seconds_open is None or req.seconds_open < config.FORM_MIN_SECONDS:
         return {"ok": True}
     request_data = req.model_dump(exclude={"consent", "website", "seconds_open"})
-    # The form asks for email and phone, so those fields stay. The free-text message must not carry
-    # card, Social Security or account numbers.
-    request_data["message"] = redact.redact(request_data["message"],
-                                            kinds=("ssn", "card", "number"))[0]
+    # The free-text message must not carry card, Social Security or account numbers. Phone and
+    # email stay, in the message and in their own fields.
+    request_data["message"] = redact.redact(request_data["message"], kinds=redact.SENSITIVE)[0]
     leads.save_request(request_data, staff_emails)
     return {"ok": True}
 
@@ -202,8 +202,8 @@ def contact(req: ContactRequest, request: Request, response: Response):
 async def unanswered(request: Request):
     """Email one finished chat's unanswered giving questions to NOTIFY_TO. The widget sends this
     with navigator.sendBeacon as plain text (so no CORS preflight), hence the manual parsing.
-    Only questions carrying a valid signature from /chat are sent, with personal numbers and
-    emails removed."""
+    Only questions carrying a valid signature from /chat are sent, with sensitive numbers
+    removed."""
     try:
         report = UnansweredReport.model_validate(json.loads(await request.body()))
     except ValueError:

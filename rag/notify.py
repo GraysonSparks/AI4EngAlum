@@ -2,8 +2,8 @@
 giving questions the assistant couldn't answer once the visitor is done chatting.
 
 leads.save_request() calls notify() after the request is stored; app.py calls notify_unanswered()
-when the widget reports a finished chat's unanswered questions, with personal numbers and emails
-already removed (redact.py). The delivery channel depends on where the assistant is hosted, which the
+when the widget reports a finished chat's unanswered questions, with Social Security, card and
+account numbers already removed (redact.py). The delivery channel depends on where the assistant is hosted, which the
 Engineering web team decides, so it is chosen by env var:
 
     NOTIFY_CHANNEL=none     (default) nothing is sent; requests are only stored
@@ -65,8 +65,8 @@ def unanswered_text(questions: list[str]) -> tuple[str, str]:
     lines = ["A visitor asked the giving assistant these questions and it had no approved answer:",
              ""]
     lines += [f"- {q}" for q in questions]
-    lines += ["", "Only the question text is sent, with personal numbers and emails removed. The "
-                  "visitor is anonymous and the rest of the conversation is not included."]
+    lines += ["", "Only the question text is sent, with Social Security, card and account numbers "
+                  "removed. The rest of the conversation is not included."]
     return subject, "\n".join(lines)
 
 

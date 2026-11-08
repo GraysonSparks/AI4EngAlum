@@ -1,4 +1,5 @@
-"""Save chat messages to a database, with personal numbers and emails removed (see redact.py).
+"""Save chat messages to a database, with sensitive numbers removed (see redact.py). Phone
+numbers and emails are kept, so a visitor who types them can be contacted.
 
 Each /chat request saves two rows: the visitor's message and the assistant's answer. A row holds
 the redacted text, a random conversation ID made by the widget, the time, whether the assistant

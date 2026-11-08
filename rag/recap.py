@@ -10,11 +10,14 @@ A recap holds:
   - the questions the assistant couldn't answer, most frequent first;
   - the most-asked questions and the most-cited source pages;
   - how many follow-up requests came in, and how many items redaction removed;
+  - the visitors who typed a phone number or email into the chat instead of the form, so staff can
+    follow up;
   - (email only) every saved message of the month as a CSV attachment, already redacted.
 
 It is stored in the `recaps` table of the same database as the chats (chatlog.py), so with
-DATABASE_URL set it is stored on that server. Recaps hold no names or contact details and are kept
-after the chats they came from are deleted by CHAT_LOG_RETENTION_DAYS.
+DATABASE_URL set it is stored on that server. Recaps are kept after the chats they came from are
+deleted by CHAT_LOG_RETENTION_DAYS. They can hold phone numbers and emails that visitors typed in
+the chat, so limit who can read the database like the follow-up requests file.
 
 The email goes to RECAP_TO (default: NOTIFY_TO, which is Ed) on the NOTIFY_CHANNEL channel
 (email, or webhook without the attachment). With NOTIFY_CHANNEL=none nothing is sent.
@@ -37,6 +40,7 @@ from datetime import date, datetime, timezone
 import chatlog
 import config
 import notify
+import redact
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +100,12 @@ def build(month: str) -> dict:
         if a["unanswered"]:
             unanswered[_normalize(q["text"])] += 1
     cited = Counter(s for a in answers for s in (a["sources"] or "").split(" | ") if s)
+    # Visitors who typed a phone number or email into the chat itself. The main contact's and the
+    # giving office's details are left out: a visitor repeating them is not leaving their own.
+    public = redact.public_values([config.FALLBACK_EMAIL, config.FALLBACK_PHONE,
+                                   config.GIVING_OFFICE_EMAIL, config.GIVING_OFFICE_PHONE])
+    contact_left = [{"at": q["at"], "conversation": q["conversation"], "message": q["text"]}
+                    for q in questions if redact.contact_details(q["text"], public)]
     redacted = Counter()
     for r in rows:
         for kind, n in json.loads(r["redacted"] or "{}").items():
@@ -109,6 +119,7 @@ def build(month: str) -> dict:
         "top_questions": [{"question": shown[k], "times": n} for k, n in asked.most_common(TOP_N)],
         "top_sources": [{"url": u, "times": n} for u, n in cited.most_common(TOP_N)],
         "follow_up_requests": _follow_up_requests(start, end),
+        "contact_left": contact_left,
         "redacted": dict(redacted),
         "rows": rows,
     }
@@ -126,14 +137,17 @@ def text(recap: dict) -> tuple[str, str]:
     if recap["redacted"]:
         lines.append("Personal data removed before saving: "
                      + ", ".join(f"{n} {k}" for k, n in sorted(recap["redacted"].items())))
+    if recap["contact_left"]:
+        lines += ["", "Visitors who typed a phone number or email in the chat (not the follow-up form):"]
+        lines += [f"- {c['at'][:16].replace('T', ' ')} UTC: {c['message']}" for c in recap["contact_left"]]
     lines += ["", "Questions it could not answer (consider adding these to the content document):"]
     lines += [f"- {u['question']} ({u['times']}x)" for u in recap["unanswered"]] or ["- none"]
     lines += ["", "Most-asked questions:"]
     lines += [f"- {t['question']} ({t['times']}x)" for t in recap["top_questions"]] or ["- none"]
     lines += ["", "Most-cited pages:"]
     lines += [f"- {s['url']} ({s['times']}x)" for s in recap["top_sources"]] or ["- none"]
-    lines += ["", "Every message of the month is attached as a CSV, with personal numbers and emails "
-                  "removed. No names or IP addresses are saved."]
+    lines += ["", "Every message of the month is attached as a CSV, with Social Security, card and "
+                  "account numbers removed. No IP addresses are saved."]
     return subject, "\n".join(lines)
 
 

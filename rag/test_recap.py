@@ -53,12 +53,14 @@ def main():
         turn("c", "2026-10-31T23:59:59+00:00", "Can I give stock?", False, unanswered=True,
              redacted={"phone": 1})
         turn("d", "2026-10-31T23:00:00+00:00", "What's the weather?", False)  # off-topic: not unanswered
+        turn("d", "2026-10-31T23:30:00+00:00", "Please call me at 334-555-0123", True)
+        turn("d", "2026-10-31T23:31:00+00:00", "Is Ed's number 334.844.1488?", True)  # public: not listed
         turn("e", "2026-11-01T00:00:00+00:00", "November question", True)   # next month
         turn("f", "2026-09-30T23:59:59+00:00", "September question", True)  # previous month
 
         r = recap.build("2026-10")
         check("counts only the month's conversations", r["conversations"] == 4, str(r["conversations"]))
-        check("counts questions and answered", (r["questions"], r["answered"]) == (5, 2),
+        check("counts questions and answered", (r["questions"], r["answered"]) == (7, 4),
               f"{r['questions']}, {r['answered']}")
         check("unanswered questions grouped, most frequent first",
               r["unanswered"] == [{"question": "Can I give stock?", "times": 2}], str(r["unanswered"]))
@@ -70,16 +72,21 @@ def main():
         check("most-cited pages", r["top_sources"][0] == {"url": WAYS, "times": 2}, str(r["top_sources"]))
         check("follow-up requests in the month", r["follow_up_requests"] == 1)
         check("redaction totals", r["redacted"] == {"phone": 1}, str(r["redacted"]))
+        check("visitors who typed their own contact details are listed",
+              [c["message"] for c in r["contact_left"]] == ["Please call me at 334-555-0123"],
+              str(r["contact_left"]))
 
         subject, body = recap.text(r)
         check("subject names the month", subject == "Giving assistant: recap for 2026-10", subject)
         check("body lists the unanswered question", "- Can I give stock? (2x)" in body, body)
+        check("body lists the contact details left in the chat",
+              "Please call me at 334-555-0123" in body, body)
 
         recap.store(r)
         recap.store(r)  # running twice replaces the month's row
         rows = chatlog.store().execute("SELECT month, questions FROM recaps")
-        check("stored once in the recaps table", rows == [("2026-10", 5)], str(rows))
-        check("stored recap can be read back", recap.stored("2026-10")["answered"] == 2)
+        check("stored once in the recaps table", rows == [("2026-10", 7)], str(rows))
+        check("stored recap can be read back", recap.stored("2026-10")["answered"] == 4)
         check("a missing month reads back as None", recap.stored("2026-09") is None)
 
         # Email with the CSV attachment, through the fake SMTP server.
@@ -95,7 +102,7 @@ def main():
         check("CSV attached", len(parts) == 1
               and parts[0].get_filename() == "giving-assistant-chats-2026-10.csv")
         table = list(csv.reader(io.StringIO(parts[0].get_content().lstrip("﻿"))))
-        check("CSV has a header and the month's 10 messages", len(table) == 11, str(len(table)))
+        check("CSV has a header and the month's 14 messages", len(table) == 15, str(len(table)))
 
         test_notify.setup("none")
         check("NOTIFY_CHANNEL=none sends nothing", recap.send(r) == "none" and not test_notify.sent)

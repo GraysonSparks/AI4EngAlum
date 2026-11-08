@@ -17,22 +17,45 @@ import redact
 
 KEEP = redact.public_values(["Contact Ed at elc0042@auburn.edu or 334.844.1488."])
 
-# (what is being checked, input, expected output)
+# (what is being checked, input, expected output). Phone numbers and emails are kept.
 REDACT_CASES = [
+    # Social Security numbers, however they are typed
     ("SSN with dashes", "my ssn is 123-45-6789", "my ssn is [SSN]"),
     ("SSN with spaces", "SSN 123 45 6789 please", "SSN [SSN] please"),
+    ("SSN with dots", "my social is 123.45.6789", "my social is [SSN]"),
+    ("SSN run together, named", "SSN 123456789", "SSN [SSN]"),
+    ("last four of an SSN", "last four of my social 6789", "last four of my social [SSN]"),
+    # Cards
     ("card number in groups", "card 4111 1111 1111 1111 was declined", "card [CARD NUMBER] was declined"),
     ("card number in one run", "4111111111111111", "[CARD NUMBER]"),
-    ("phone with dashes", "call me at 334-555-0123", "call me at [PHONE]"),
-    ("phone with parentheses", "(334) 555-0123 is my cell", "[PHONE] is my cell"),
-    ("phone with +1 and dots", "+1 334.555.0123", "[PHONE]"),
-    ("email with digits", "write to jdoe1985@gmail.com", "write to [EMAIL]"),
-    ("bank account number", "account 000123456789 routing 062000019", "account [NUMBER] routing [NUMBER]"),
+    ("Amex in 4-6-5 groups", "amex 3782 822463 10005", "amex [CARD NUMBER]"),
+    ("card's last four", "visa ending in 1234", "visa ending in [CARD NUMBER]"),
+    ("security code", "cvv 123", "cvv [SECURITY CODE]"),
+    ("PIN", "PIN 4321", "PIN [PIN]"),
+    # Bank and ID numbers
+    ("account and routing numbers", "routing 062000019 account 000123456789",
+     "routing [ROUTING NUMBER] account [ACCOUNT NUMBER]"),
+    ("account number shaped like a phone number", "my account number is 3345550123",
+     "my account number is [ACCOUNT NUMBER]"),
+    ("account number in groups, unnamed", "0012 3456 7890 is my account", "[NUMBER] is my account"),
+    ("long number with no label", "123456789", "[NUMBER]"),
+    ("driver's license", "driver's license 1234567", "driver's license [ID NUMBER]"),
+    ("password", "password: hunter2", "password: [PASSWORD]"),
+    # Kept: contact details
+    ("phone with dashes kept", "call me at 334-555-0123", "call me at 334-555-0123"),
+    ("phone with parentheses kept", "(334) 555-0123 is my cell", "(334) 555-0123 is my cell"),
+    ("phone with +1 and dots kept", "+1 334.555.0123", "+1 334.555.0123"),
+    ("phone run together kept", "3345550123", "3345550123"),
+    ("phone with extension kept", "1-800-555-0199 ext. 12", "1-800-555-0199 ext. 12"),
+    ("international phone kept", "+44 20 7946 0958", "+44 20 7946 0958"),
+    ("email with digits kept", "write to jdoe1985@gmail.com", "write to jdoe1985@gmail.com"),
+    # Kept: useful numbers
     ("gift amount stays", "I want to give $5,000 or $1000000", "I want to give $5,000 or $1000000"),
     ("class year and course stay", "Class of 1998, took ELEC 3810", "Class of 1998, took ELEC 3810"),
     ("percent and date stay", "5% by 12/31/2026", "5% by 12/31/2026"),
-    ("public contact stays", "Ed: elc0042@auburn.edu, 334.844.1488", "Ed: elc0042@auburn.edu, 334.844.1488"),
-    ("public phone in another format stays", "(334) 844-1488", "(334) 844-1488"),
+    ("year range stays", "I was there 1998-2002", "I was there 1998-2002"),
+    ("short number after a named word stays", "the 2026 social on May 5, card 25",
+     "the 2026 social on May 5, card 25"),
 ]
 
 
@@ -43,10 +66,23 @@ def check_redaction() -> tuple[int, int]:
         ok = got == expected
         passed += ok
         print(f"{'PASS' if ok else 'FAIL'}  redact: {name}" + ("" if ok else f"\n      got: {got!r}"))
-    form = redact.redact("call 334-555-0123, SSN 123-45-6789", kinds=("ssn", "card", "number"))[0]
-    ok = form == "call 334-555-0123, SSN [SSN]"
-    print(f"{'PASS' if ok else 'FAIL'}  redact: form message keeps the phone, drops the SSN")
-    return passed + ok, len(REDACT_CASES) + 1
+    extra = [
+        ("REDACT_CONTACT_DETAILS=1 also removes phone and email",
+         redact.redact("call 334-555-0123 or jdoe@x.com", kinds=redact.SENSITIVE + redact.CONTACT)[0],
+         "call [PHONE] or [EMAIL]"),
+        ("...but keeps public contacts",
+         redact.redact("Ed: elc0042@auburn.edu, (334) 844-1488", KEEP,
+                       kinds=redact.SENSITIVE + redact.CONTACT)[0],
+         "Ed: elc0042@auburn.edu, (334) 844-1488"),
+        ("contact details found for the recap",
+         redact.contact_details("call 334-555-0123 or jdoe@x.com, account 3345550123", KEEP),
+         ["jdoe@x.com", "334-555-0123"]),
+    ]
+    for name, got, expected in extra:
+        ok = got == expected
+        passed += ok
+        print(f"{'PASS' if ok else 'FAIL'}  redact: {name}" + ("" if ok else f"\n      got: {got!r}"))
+    return passed, len(REDACT_CASES) + len(extra)
 
 
 def check_saving() -> tuple[int, int]:
@@ -82,9 +118,9 @@ def check_saving() -> tuple[int, int]:
         rows = chatlog.messages_between("0000", "9999")
         check("two rows per message (visitor and assistant)", len(rows) == 8, f"{len(rows)} rows")
         first_q, first_a = rows[0], rows[1]
-        check("visitor text saved redacted", first_q["text"] == "My SSN is [SSN], call [PHONE]",
-              first_q["text"])
-        check("redaction counts saved", json.loads(first_q["redacted"]) == {"ssn": 1, "phone": 1},
+        check("visitor text saved: SSN removed, phone kept",
+              first_q["text"] == "My SSN is [SSN], call 334-555-0123", first_q["text"])
+        check("redaction counts saved", json.loads(first_q["redacted"]) == {"ssn": 1},
               str(first_q["redacted"]))
         check("public contact kept in the answer", config.FALLBACK_EMAIL in first_a["text"]
               and config.FALLBACK_PHONE in first_a["text"], first_a["text"])
@@ -98,8 +134,7 @@ def check_saving() -> tuple[int, int]:
               and rows[6]["conversation"].startswith("single-")
               and rows[4]["conversation"] != rows[6]["conversation"])
         all_text = json.dumps(rows)
-        check("no raw SSN or phone anywhere in the database",
-              "123-45-6789" not in all_text and "334-555-0123" not in all_text)
+        check("no raw SSN anywhere in the database", "123-45-6789" not in all_text)
 
         # Retention: an old row is deleted, a new one stays.
         chatlog.store().execute("INSERT INTO messages (conversation, at, role, text) VALUES (?, ?, ?, ?)",
