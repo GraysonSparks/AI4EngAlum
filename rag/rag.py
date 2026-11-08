@@ -228,7 +228,8 @@ class Assistant:
 
     def answer(self, question: str, history: list[dict] | None = None) -> dict:
         """history: earlier turns of the live conversation, [{"role": "user"|"assistant",
-        "content": str}, ...], oldest first. Used for this request only; nothing is stored."""
+        "content": str}, ...], oldest first. Used for this request only (app.py saves the new
+        message and answer, redacted)."""
         if CONTACT_REQUEST.search(question):
             # Fixed reply, no model call: the widget shows its follow-up form under it.
             return {"answer": CONTACT_OFFER, "sources": [], "chunks": [], "fallback": False,

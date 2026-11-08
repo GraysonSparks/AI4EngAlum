@@ -11,10 +11,12 @@
  * (bottom-right, 42x38 px, 36 px from the bottom, so its center is 55 px up). Change TOP_BUTTON_MID
  * if the site moves that button.
  *
- * Privacy: the conversation lives only in this page's memory. It is never written to
- * localStorage, sessionStorage, or cookies, and it is gone on reload, navigation, tab close, or
- * "Clear". Recent turns are sent with each request so the assistant can follow up; the server
- * uses them for that answer and does not store them.
+ * Privacy: in the browser, the conversation lives only in this page's memory. It is never written
+ * to localStorage, sessionStorage, or cookies, and it is gone on reload, navigation, tab close, or
+ * "Clear". Recent turns are sent with each request so the assistant can follow up. The server
+ * saves each new message and answer with card, Social Security, phone and other long numbers and
+ * email addresses removed, grouped by a random conversation ID made here (new on each "Clear").
+ * The footer tells visitors this (SAVE_NOTICE).
  *
  * The widget labels itself as AI in the header, greeting and reply labels. When the assistant can't
  * answer, it gives Ed Collari's contact details first, then his card's "Ask Ed to contact me"
@@ -22,8 +24,7 @@
  *
  * Those unanswered questions (only the question text, already signed by /chat) are kept in page
  * memory and sent to /unanswered once the visitor is done: when they close or clear the chat,
- * leave the page, or go 10 minutes without asking anything. The server emails them to Advancement
- * and stores nothing.
+ * leave the page, or go 10 minutes without asking anything. The server emails them to Advancement.
  *
  * The one thing a visitor can choose to send for storage is the follow-up form (name, email,
  * optional phone and message), posted to /contact only when they tick the consent box and submit.
@@ -40,6 +41,8 @@
   const IDLE_REPORT_MS = 10 * 60 * 1000; // send unanswered questions after this long without a new one
   const TEASER_KEY = 'aug-chat-teaser-dismissed'; // the only thing stored: a yes/no UI flag
   const HISTORY_SENT = 6; // most recent messages sent with each request
+  // Shown in the footer. If the server runs with CHAT_LOG=0, set this to ''.
+  const SAVE_NOTICE = 'Chats are saved to improve answers, with personal numbers and emails removed. Please don\'t share card or Social Security numbers.';
   const TOP_BUTTON_MID = 55; // px from the viewport bottom to the center of the site's back-to-top button
 
   const css = `
@@ -145,6 +148,7 @@
   #aug-chat .send:disabled{opacity:.5;cursor:default;}
   #aug-chat .send svg{width:16px;height:16px;fill:#fff;}
   #aug-chat .foot{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#6a7a97;padding-top:8px;}
+  #aug-chat .foot .save{display:block;margin-top:3px;color:#5f6f8c;}
   #aug-chat .foot button{background:none;border:none;color:#8aa0c4;font:inherit;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;}
   @media (max-width:460px){
     #aug-chat .panel{right:0;bottom:0;left:0;width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0;}
@@ -187,7 +191,7 @@
           <input type="text" placeholder="Ask about giving to Auburn Engineering..." autocomplete="off" maxlength="1000" aria-label="Your question">
           <button class="send" aria-label="Send message"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
         </div>
-        <div class="foot"><span>AI-generated answers from official Auburn Engineering giving pages. Verify details at the linked source.</span><button class="reset" title="Clear this conversation">Clear</button></div>
+        <div class="foot"><span>AI-generated answers from official Auburn Engineering giving pages. Verify details at the linked source.<span class="save"></span></span><button class="reset" title="Clear this conversation">Clear</button></div>
       </div>
     </div>`;
   document.body.appendChild(root);
@@ -197,7 +201,10 @@
   const messages = $('.messages'), input = $('.field input'), sendBtn = $('.send');
 
   // ---- State: conversation in memory only ----
-  const state = { history: [], unanswered: [] };
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID()
+    : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12));
+  const state = { history: [], unanswered: [], conversationId: newId() };
+  $('.foot .save').textContent = SAVE_NOTICE;
   function teaserDismissed() {
     try { return sessionStorage.getItem(TEASER_KEY) === '1'; } catch (e) { return false; }
   }
@@ -414,7 +421,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
-        body: JSON.stringify({ message: text, history }),
+        body: JSON.stringify({ message: text, history, conversation_id: state.conversationId }),
       });
       if (!res.ok) throw new Error('Backend returned ' + res.status);
       const data = await res.json();
@@ -510,7 +517,9 @@
 
   sendBtn.addEventListener('click', () => { const v = input.value; input.value = ''; ask(v); });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const v = input.value; input.value = ''; ask(v); } });
-  $('.reset').addEventListener('click', () => { reportUnanswered(); state.history = []; renderAll(); });
+  $('.reset').addEventListener('click', () => {
+    reportUnanswered(); state.history = []; state.conversationId = newId(); renderAll();
+  });
 
   // ---- Drag-to-resize (panel is anchored bottom-left, so the grip is top-right) ----
   const MIN_W = 300, MIN_H = 340;

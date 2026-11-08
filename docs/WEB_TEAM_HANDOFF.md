@@ -17,7 +17,8 @@ file and marks which ones a deployment needs.
 - A **local language model** run by [Ollama](https://ollama.com): `qwen3.5:9b` for answers and
   `nomic-embed-text` for search. No question is sent to OpenAI or any other outside service.
 
-It has **no connection to OAK or any donor record**, and it stores no conversations.
+It has **no connection to OAK or any donor record**. It saves each question and answer with
+personal numbers and emails removed (`CHAT_LOG`, details in [`../rag/README.md`](../rag/README.md#saved-chats-chatlogpy-redactpy)).
 
 ## Adding it to a page
 
@@ -82,6 +83,8 @@ All settings are environment variables (defaults in `rag/config.py`):
 | `TRUST_FORWARDED_FOR` | `1` | **Only behind a proxy that sets `X-Forwarded-For`.** Otherwise every visitor looks like the proxy and shares one spam limit. |
 | `CHROMA_DIR` | e.g. `/var/lib/ai4engalum/chroma_db` | Search index location, rebuilt by `ingest.py`. |
 | `CONTACT_REQUESTS_FILE` | e.g. `/var/lib/ai4engalum/contact_requests.jsonl` | Where follow-up form submissions are saved (**personal data**: restrict who can read it). |
+| `CHAT_LOG_DB` | e.g. `/var/lib/ai4engalum/chats.sqlite3` | Saved chats (redacted). Or set `DATABASE_URL=postgresql://...` to use a PostgreSQL server. `CHAT_LOG=0` turns saving off. |
+| `CHAT_LOG_RETENTION_DAYS` | 400 (default) | Saved chats older than this are deleted. |
 | `UNANSWERED_SECRET` | a long random string | Signs unanswered questions. If unset, a new one is made each start, which is fine. |
 | `NOTIFY_CHANNEL` | `email` | Advancement chose email. Default `none` sends nothing. |
 | `NOTIFY_TO` | `elc0042@auburn.edu` (default) | Comma-separated recipients. |
@@ -97,18 +100,20 @@ Check email delivery once after setup by submitting the follow-up form on the te
 
 | Method + path | Used by | What it does |
 |---|---|---|
-| `POST /chat` | widget | `{"message", "history"}` → answer, source links, contact cards. Nothing stored. |
+| `POST /chat` | widget | `{"message", "history", "conversation_id"}` → answer, source links, contact cards. The message and answer are saved, redacted. |
 | `POST /contact` | widget's follow-up form | Saves name, email, optional phone and message (only with consent), then notifies. |
-| `POST /unanswered` | widget, when a chat ends | Emails the giving questions the assistant couldn't answer. Only signed questions from `/chat` are accepted; nothing stored. |
+| `POST /unanswered` | widget, when a chat ends | Emails the giving questions the assistant couldn't answer, redacted. Only signed questions from `/chat` are accepted. |
 | `GET /health` | monitoring | Index size and model names. |
 | `POST /reload-rules` | staff | Re-reads the response rules from the content document. **Block this at the proxy** or limit it to campus addresses. |
 | `GET /` | testing | A copy of the giving pages with the widget, for trying it out. Can be blocked in production. |
 
 ## Security and privacy summary
 
-- No donor data and no conversation storage. Each request carries the last few turns of the chat
-  so follow-ups work; they are used for that one answer and dropped.
-- The only stored personal data is a follow-up form the visitor chose to submit with consent.
+- No donor data. Each question and answer is saved with emails, phone, Social Security, card and
+  other long numbers removed, under a random conversation ID; no IP address or browser details.
+  Restrict who can read the database. The last few turns sent with each request are used for that
+  one answer and dropped.
+- The only stored contact details are from a follow-up form the visitor chose to submit with consent.
 - Spam protection on the form and the unanswered report: per-address rate limit (held in memory),
   a hidden honeypot field, and a minimum time the form must be open.
 - Every answer is checked in code: links that are not from the approved sources are replaced, and a

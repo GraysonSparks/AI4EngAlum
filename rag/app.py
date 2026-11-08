@@ -5,7 +5,8 @@
 Then open http://localhost:8000/ for the test site (static/site/), or POST {"message": "..."} to /chat.
 POST /contact stores a follow-up request from the widget's contact form (see leads.py) and notifies
 staff on the channel set by NOTIFY_CHANNEL (see notify.py). POST /unanswered emails the giving
-questions a finished chat couldn't answer; they are never stored.
+questions a finished chat couldn't answer. Each /chat message and answer is saved with personal
+numbers and emails removed (see chatlog.py and redact.py; CHAT_LOG=0 turns this off).
 """
 
 import hashlib
@@ -22,9 +23,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+import chatlog
 import config
 import leads
 import notify
+import redact
 from rag import MAIN_CONTACT_CARD, Assistant
 
 app = FastAPI(title="AI4EngAlum Giving Assistant")
@@ -37,6 +40,13 @@ if origins:
                        allow_methods=["POST"], allow_headers=["Content-Type"])
 
 assistant = Assistant()
+# Emails and phone numbers already in the approved content (staff contacts, the giving office) are
+# public, so redaction leaves them in the saved answers.
+PUBLIC_CONTACTS = redact.public_values(
+    assistant.collection.get(include=["documents"])["documents"]
+    + [config.FALLBACK_EMAIL, config.FALLBACK_PHONE, config.GIVING_OFFICE_EMAIL,
+       config.GIVING_OFFICE_PHONE])
+chatlog.purge_old()
 
 # ---- Spam protection: per-address rate limit, held in memory only ----
 _hits: dict[tuple[str, str], deque] = defaultdict(deque)
@@ -77,8 +87,11 @@ class Turn(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     # Earlier turns of the live conversation, sent by the widget with each request. They are used
-    # to answer this one request and then discarded: nothing here is stored or logged.
+    # to answer this one request and then discarded (they were saved when they were new).
     history: list[Turn] = Field(default_factory=list, max_length=20)
+    # A random ID the widget makes for each conversation, so saved messages can be grouped. It is
+    # not linked to the visitor in any way.
+    conversation_id: str | None = Field(default=None, max_length=64)
 
 
 class StaffContact(BaseModel):
@@ -138,6 +151,7 @@ def chat(req: ChatRequest, response: Response):
                                   [t.model_dump() for t in req.history])
     except Exception as e:  # Ollama down, collection missing, etc.
         raise HTTPException(status_code=503, detail=f"Assistant unavailable: {e}")
+    chatlog.save_turn(req.conversation_id, req.message.strip(), result, PUBLIC_CONTACTS)
     unanswered = None
     if result.get("report_unanswered"):
         q = result["search_query"][:1000]  # the question with follow-ups like "that" resolved
@@ -163,7 +177,12 @@ def contact(req: ContactRequest, request: Request, response: Response):
     # A bot gets the same reply as a person, so it can't tell it was caught; nothing is stored.
     if req.website or req.seconds_open is None or req.seconds_open < config.FORM_MIN_SECONDS:
         return {"ok": True}
-    leads.save_request(req.model_dump(exclude={"consent", "website", "seconds_open"}), staff_emails)
+    request_data = req.model_dump(exclude={"consent", "website", "seconds_open"})
+    # The form asks for email and phone, so those fields stay. The free-text message must not carry
+    # card, Social Security or account numbers.
+    request_data["message"] = redact.redact(request_data["message"],
+                                            kinds=("ssn", "card", "number"))[0]
+    leads.save_request(request_data, staff_emails)
     return {"ok": True}
 
 
@@ -171,7 +190,8 @@ def contact(req: ContactRequest, request: Request, response: Response):
 async def unanswered(request: Request):
     """Email one finished chat's unanswered giving questions to NOTIFY_TO. The widget sends this
     with navigator.sendBeacon as plain text (so no CORS preflight), hence the manual parsing.
-    Only questions carrying a valid signature from /chat are sent; nothing is stored."""
+    Only questions carrying a valid signature from /chat are sent, with personal numbers and
+    emails removed."""
     try:
         report = UnansweredReport.model_validate(json.loads(await request.body()))
     except ValueError:
@@ -180,6 +200,7 @@ async def unanswered(request: Request):
         raise HTTPException(status_code=429, detail="Too many requests.")
     questions = list(dict.fromkeys(u.question for u in report.questions
                                    if hmac.compare_digest(u.token, sign(u.question))))
+    questions = list(dict.fromkeys(redact.redact(q, PUBLIC_CONTACTS)[0] for q in questions))
     if questions:
         notify.notify_unanswered(questions)
     return Response(status_code=204)

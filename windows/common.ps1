@@ -28,6 +28,7 @@ $ChatModel = "qwen3.5:9b"
 $env:CHROMA_DIR = Join-Path $DataDir "chroma_db"
 $env:OLLAMA_URL = $OllamaUrl
 $env:CONTACT_REQUESTS_FILE = Join-Path $DataDir "data\contact_requests.jsonl"
+$env:CHAT_LOG_DB = Join-Path $DataDir "data\chats.sqlite3"
 $env:PYTHONUTF8 = "1"
 $env:PYTHONDONTWRITEBYTECODE = "1"
 $env:PYTHONUNBUFFERED = "1"   # so test output appears as it runs

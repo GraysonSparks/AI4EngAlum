@@ -36,6 +36,7 @@ CASES = [
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         config.CONTACT_REQUESTS_FILE = Path(tmp) / "contact_requests.jsonl"
+        config.CHAT_LOG_DB = Path(tmp) / "chats.sqlite3"
         config.RATE_LIMIT = 100  # the cases below all come from one address
         import app as app_module  # imported after the override so nothing is written to rag/data/
         import notify

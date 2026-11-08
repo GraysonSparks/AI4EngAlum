@@ -24,7 +24,7 @@ COLLECTION = "giving"
 
 TOP_K = int(os.environ.get("TOP_K", "4"))
 # How many earlier messages (user + assistant) from the live conversation are used per request.
-# The client sends them with each request; the server never stores them.
+# The client sends them with each request; only the newest message and its answer are saved (below).
 HISTORY_MESSAGES = int(os.environ.get("HISTORY_MESSAGES", "6"))
 # Cosine distance (0 = identical). Chunks farther than this are treated as "not relevant";
 # if nothing is closer, the bot returns the fallback without calling the chat model.
@@ -54,6 +54,14 @@ FALLBACK_REPLY = (
     "I don't have approved information to answer that. For help, please contact "
     f"{FALLBACK_CONTACT}. {FALLBACK_INVITE}"
 )
+
+# Saved chats (see chatlog.py). Each message and answer is saved with personal numbers and emails
+# removed (redact.py). CHAT_LOG=0 turns saving off. DATABASE_URL=postgresql://... saves to a
+# PostgreSQL server instead of the local SQLite file.
+CHAT_LOG = os.environ.get("CHAT_LOG", "1") == "1"
+CHAT_LOG_DB = Path(os.environ.get("CHAT_LOG_DB", RAG_DIR / "data" / "chats.sqlite3"))
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+CHAT_LOG_RETENTION_DAYS = int(os.environ.get("CHAT_LOG_RETENTION_DAYS", "400"))
 
 # Staff notifications (see notify.py): none | email | webhook. Advancement chose email; it stays
 # "none" until the assistant is hosted so local testing never emails anyone.

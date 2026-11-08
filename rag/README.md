@@ -26,6 +26,7 @@ python eval_models.py qwen3.5:9b gemma4:12b   # scored comparison of chat models
 python routing.py                # print the staff routing table built from the directory
 python test_contact.py           # checks the follow-up form, spam protection and /unanswered (18 checks)
 python test_notify.py            # checks notifications and unanswered emails with fake SMTP/webhook (13 checks)
+python test_chatlog.py           # checks redaction and the saved-chat database (28 checks)
 ```
 
 `POST /reload-rules` picks up edits to the doc's Response Rules without restarting the server
@@ -97,7 +98,9 @@ A visitor can leave their details for a staff member to follow up:
   routed staff member if there is one. The consent box must be ticked; `POST /contact` rejects a
   request without it.
 - **Where it goes:** one line per request in `rag/data/contact_requests.jsonl` (gitignored; override
-  with `CONTACT_REQUESTS_FILE`). The conversation, IP address, and browser details are not stored.
+  with `CONTACT_REQUESTS_FILE`). The conversation, IP address, and browser details are not attached.
+  Card, Social Security and other long numbers are removed from the free-text message (the email
+  and phone fields stay, because the visitor gave them to be contacted).
   All writes go through `leads.save_request()`, the one place to change when Advancement decides
   where requests should live.
 - **Spam protection:**
@@ -114,12 +117,12 @@ A visitor can leave their details for a staff member to follow up:
 
 ## Unanswered-question emails
 
-Advancement wanted to see which donor questions the assistant can't answer, without the project
-storing conversations. When a giving question hits a dead end, `/chat` returns it in `unanswered` with an HMAC signature. The widget keeps those in page
+Advancement wanted to see which donor questions the assistant can't answer. When a giving question hits a dead end, `/chat` returns it in `unanswered` with an HMAC signature. The widget keeps those in page
 memory and posts them to `POST /unanswered` once the visitor is done: on closing or clearing the
 chat, leaving the page, or after 10 minutes without a new one. The server checks each signature,
 so only questions the assistant really failed on are sent, then emails them to `NOTIFY_TO` (Ed).
-Nothing is stored, and the email has only the question text: no name, address or other turns.
+The email has only the question text, with personal numbers and emails removed: no name, address
+or other turns.
 
 A weekly digest would mean keeping question text on the server until it is sent. Say so if
 Advancement prefers that; it's a small change in `notify.py`.
@@ -156,19 +159,19 @@ from (override with `data-endpoint="..."`). Its CSS is scoped under `#aug-chat`,
 persists across pages for the browser session. To embed it on a page served from another origin,
 start the backend with `CORS_ORIGINS=<that origin>`.
 
-## Conversation memory (live only)
+## Conversation memory
 
-The assistant follows up within a conversation ("Who is the liaison for *that* department?"), but
-nothing about the conversation is stored. (The follow-up form above is separate: it stores only
-what the visitor submits in it.)
+The assistant follows up within a conversation ("Who is the liaison for *that* department?").
+Each new message and its answer is saved with personal data removed (see "Saved chats" below).
+(The follow-up form above is separate: it stores only what the visitor submits in it.)
 
 - **Browser:** the widget keeps the conversation in page memory only. Nothing goes to localStorage,
   sessionStorage, or cookies. The one exception is a yes/no "pop-up dismissed" flag in sessionStorage,
   which holds no conversation content. A reload, page change, tab close, or **Clear** ends the conversation.
 - **Server:** each `/chat` request carries the last 6 messages (`HISTORY_MESSAGES` in `config.py`).
-  The server uses them for that one answer and discards them. Conversations go to no database, no
-  file, and no logging of message text (uvicorn's access log records only `POST /chat` and the status code).
-  Responses are sent with `Cache-Control: no-store`.
+  The server uses them for that one answer and discards them; only the new message and its answer
+  are saved, redacted (next section). uvicorn's access log records only `POST /chat` and the status
+  code. Responses are sent with `Cache-Control: no-store`.
 - **Follow-ups:** when there's history, the model first rewrites the latest message as a standalone
   question for the search ("that department" → "the Computer Science and Software Engineering
   Department"). The answer step sees both the visitor's wording and the resolved question.
@@ -178,3 +181,42 @@ what the visitor submits in it.)
 
 `eval_models.py` includes 7 multi-turn cases: follow-ups, a topic switch, and an injection attempt
 inside a follow-up.
+
+## Saved chats (`chatlog.py`, `redact.py`)
+
+Every `/chat` request saves two rows: the visitor's message and the assistant's answer. Each row has
+the text, a random conversation ID from the widget (new on each **Clear**), the time, whether the
+question was answered, whether it was reported as unanswered, the cited sources, and how many items
+were redacted. No IP address, browser details or name is saved. The widget footer tells visitors
+that chats are saved.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `CHAT_LOG` | `1` | `0` saves nothing. Then also set `SAVE_NOTICE` in `chat-widget.js` to `''`. |
+| `CHAT_LOG_DB` | `rag/data/chats.sqlite3` | The SQLite file (gitignored). |
+| `DATABASE_URL` | empty | `postgresql://user:pass@host/db` saves to a PostgreSQL server instead, for example one the web team runs on another machine. Needs `pip install "psycopg[binary]"`. |
+| `CHAT_LOG_RETENTION_DAYS` | `400` | Older rows are deleted at start-up. `0` keeps everything. |
+
+A failed save is logged and never stops the answer.
+
+**Redaction.** Visitors are not asked for personal data, but some type it anyway. Before a row is
+saved (and before an unanswered question is emailed), `redact.py` replaces:
+
+| Found | Saved as | Pattern |
+|---|---|---|
+| Email address | `[EMAIL]` | `name@domain.tld` |
+| Social Security number | `[SSN]` | `123-45-6789` or `123 45 6789` |
+| Card number | `[CARD NUMBER]` | 13 to 19 digits, with or without spaces or dashes |
+| Phone number | `[PHONE]` | US formats: `334-555-0123`, `(334) 555-0123`, `+1 334.555.0123` |
+| Any other long number | `[NUMBER]` | 7 or more digits in a row: account, routing and ID numbers |
+
+Short numbers stay, because they are useful and not personal: gift amounts (`$5,000`), class years,
+course numbers, dates and percentages. Removing *every* number would destroy those, and an email
+like `jdoe1985@...` would still be half there, so the patterns above are used instead. Emails and
+phone numbers that are already public in the approved content (Ed, the giving office, staff in the
+directory) are kept, so saved answers stay readable. A visitor who wants to be contacted uses the
+follow-up form, which keeps their email and phone with consent.
+
+Not caught: names, street addresses and dates of birth (no reliable pattern, and removing names
+would also remove the staff names the assistant gives). `python redact.py "<text>"` shows what a
+message would be saved as; `python test_chatlog.py` runs 28 checks.
