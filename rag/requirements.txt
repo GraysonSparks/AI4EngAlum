@@ -1,0 +1,6 @@
+chromadb
+fastapi
+uvicorn[standard]
+httpx
+python-docx
+odfpy

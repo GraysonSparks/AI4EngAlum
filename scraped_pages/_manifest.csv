@@ -1,0 +1,18 @@
+url,filename,char_count,status
+https://eng.auburn.edu/giving/,eng_auburn_edu_giving.txt,1243,OK (browser+cleaned)
+https://eng.auburn.edu/giving/annual-giving/,eng_auburn_edu_giving_annual_giving.txt,189,OK (static)
+https://eng.auburn.edu/giving/annual-giving/eagle-society.html,eng_auburn_edu_giving_annual_giving_eagle_society_html.txt,2389,OK (browser+cleaned)
+https://eng.auburn.edu/giving/ways-to-give,eng_auburn_edu_giving_ways_to_give.txt,3137,OK (browser+cleaned)
+https://eng.auburn.edu/admin/development/index.html,eng_auburn_edu_admin_development_index_html.txt,4852,OK (browser+cleaned)
+https://eng.auburn.edu/giving/giving-news.html,excluded/eng_auburn_edu_giving_giving_news_html.txt,35899,"EXCLUDED (donor human-interest stories, not how-to-give content -- moved to excluded/)"
+https://give.auburn.edu/pages/home-2694,give_auburn_edu_pages_home_2694.txt,344,OK (static)
+https://give.auburn.edu/campaigns/aerospace-engineering-department-2,give_auburn_edu_campaigns_aerospace_engineering_department_2.txt,1239,OK (browser)
+https://give.auburn.edu/campaigns/biosystems-engineering-2,give_auburn_edu_campaigns_biosystems_engineering_2.txt,1341,OK (browser)
+https://give.auburn.edu/campaigns/chemical-engineering-department-7,give_auburn_edu_campaigns_chemical_engineering_department_7.txt,1222,OK (browser)
+https://give.auburn.edu/campaigns/civil-engineering-department-8,give_auburn_edu_campaigns_civil_engineering_department_8.txt,1267,OK (browser)
+https://give.auburn.edu/campaigns/computer-science-and-software-engineering-gifts,give_auburn_edu_campaigns_computer_science_and_software_engineering_gifts.txt,1211,OK (browser)
+https://give.auburn.edu/campaigns/electrical-and-computer-engineering-department-5,give_auburn_edu_campaigns_electrical_and_computer_engineering_department_5.txt,1114,OK (browser)
+https://give.auburn.edu/campaigns/industrial-and-systems-engineering,give_auburn_edu_campaigns_industrial_and_systems_engineering.txt,1379,OK (browser)
+https://give.auburn.edu/campaigns/materials-engineering-2,give_auburn_edu_campaigns_materials_engineering_2.txt,1336,OK (browser)
+https://give.auburn.edu/campaigns/mechanical-engineering-department-3,give_auburn_edu_campaigns_mechanical_engineering_department_3.txt,1296,OK (browser)
+https://give.auburn.edu/campaigns/wireless-engineering-program-2,give_auburn_edu_campaigns_wireless_engineering_program_2.txt,1331,OK (browser)
