@@ -11,6 +11,9 @@
  * (bottom-right, 42x38 px, 36 px from the bottom, so its center is 55 px up). Change TOP_BUTTON_MID
  * if the site moves that button.
  *
+ * Size: every size in the widget (button, panel, text, spacing) is multiplied by SCALE (1.1).
+ * Override it per page with data-scale="1.2" on the script tag.
+ *
  * Privacy: in the browser, the conversation lives only in this page's memory. It is never written
  * to localStorage, sessionStorage, or cookies, and it is gone on reload, navigation, tab close, or
  * "Clear". Recent turns are sent with each request so the assistant can follow up. The server
@@ -44,12 +47,17 @@
   // Shown in the footer. If the server runs with CHAT_LOG=0, set this to ''.
   const SAVE_NOTICE = 'Chats are saved to improve answers, with personal numbers and emails removed. Please don\'t share card or Social Security numbers.';
   const TOP_BUTTON_MID = 55; // px from the viewport bottom to the center of the site's back-to-top button
+  const SCALE = Number(script && script.dataset.scale) || 1.1; // widget size; 1 = the original design
+  // Multiply every px size of 3 or more in the styles by SCALE. 1-2 px borders stay sharp, and the
+  // phone breakpoint (max-width) and the back-to-top alignment are page geometry, not widget size.
+  const scalePx = (text) => text.replace(/(\(max-width:)?(\d*\.?\d+)px/g, (m, bp, n) =>
+    bp || Number(n) < 3 ? m : +(Number(n) * SCALE).toFixed(2) + 'px');
 
-  const css = `
+  const css = scalePx(`
   #aug-chat{--toggle:72px;--navy:#0b2341;--navy-deep:#071830;--orange:#cc4e0b;--orange-hi:#e86100;
     font-family:'Source Sans 3',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;}
   #aug-chat *{box-sizing:border-box;}
-  #aug-chat .launcher{position:fixed;left:22px;bottom:calc(${TOP_BUTTON_MID}px - var(--toggle) / 2);z-index:2147483000;display:flex;
+  #aug-chat .launcher{position:fixed;left:22px;bottom:calc(var(--top-mid) - var(--toggle) / 2);z-index:2147483000;display:flex;
     flex-direction:row-reverse;align-items:flex-end;gap:12px;}
   #aug-chat .teaser{background:#fff;color:#1d232c;max-width:250px;padding:14px 34px 14px 16px;border-radius:14px;
     box-shadow:0 10px 30px rgba(11,35,65,.22);font-size:15px;line-height:1.4;position:relative;cursor:pointer;
@@ -151,13 +159,14 @@
   #aug-chat .foot .save{display:block;margin-top:3px;color:#5f6f8c;}
   #aug-chat .foot button{background:none;border:none;color:#8aa0c4;font:inherit;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;}
   @media (max-width:460px){
-    #aug-chat .panel{right:0;bottom:0;left:0;width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0;}
+    #aug-chat .panel{right:0;bottom:0;left:0;width:100%;max-width:100%;min-width:0;height:100%;max-height:100%;border-radius:0;}
     #aug-chat .launcher{left:16px;bottom:16px;}
     #aug-chat .resize{display:none;}
     #aug-chat .expand{display:none;}
     #aug-chat .teaser{max-width:200px;}
   }
-  @media (prefers-reduced-motion:reduce){#aug-chat .teaser,#aug-chat .panel,#aug-chat .toggle{transition:none;}}`;
+  @media (prefers-reduced-motion:reduce){#aug-chat .teaser,#aug-chat .panel,#aug-chat .toggle{transition:none;}}`)
+  + `#aug-chat{--top-mid:${TOP_BUTTON_MID}px;}`;
 
   const BUBBLE_ICON = '<path d="M21 11.5c0 4.14-4.03 7.5-9 7.5-1.06 0-2.08-.15-3.02-.43L4 20l1.06-3.18C4.4 15.6 4 14.6 4 13.5 4 9.36 8.03 6 13 6s9 3.36 9 5.5z"/>';
   const GREETING = "Hi! I'm the Auburn Engineering giving assistant, an AI tool. I can help with ways to give, supporting a specific department, the EAGLE Society, or finding the right person on our advancement team.";
@@ -522,7 +531,7 @@
   });
 
   // ---- Drag-to-resize (panel is anchored bottom-left, so the grip is top-right) ----
-  const MIN_W = 300, MIN_H = 340;
+  const MIN_W = 300 * SCALE, MIN_H = 340 * SCALE, MAX_W = 640 * SCALE, MAX_H = 760 * SCALE;
   let drag = null;
   $('.resize').addEventListener('pointerdown', (e) => {
     if (window.innerWidth <= 460 || panel.classList.contains('full')) return;
@@ -533,8 +542,8 @@
   });
   document.addEventListener('pointermove', (e) => {
     if (!drag) return;
-    const w = Math.min(Math.max(drag.w + e.clientX - drag.x, MIN_W), Math.min(640, window.innerWidth - 32));
-    const h = Math.min(Math.max(drag.h + drag.y - e.clientY, MIN_H), Math.min(window.innerHeight - 32, 760));
+    const w = Math.min(Math.max(drag.w + e.clientX - drag.x, MIN_W), Math.min(MAX_W, window.innerWidth - 32));
+    const h = Math.min(Math.max(drag.h + drag.y - e.clientY, MIN_H), Math.min(window.innerHeight - 32, MAX_H));
     panel.style.width = w + 'px';
     panel.style.height = h + 'px';
   });

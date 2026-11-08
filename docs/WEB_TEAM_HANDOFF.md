@@ -39,6 +39,10 @@ path, point it there:
 `/contact` and `/unanswered` are found next to `data-endpoint`, or can be set separately with
 `data-contact-endpoint` and `data-unanswered-endpoint`.
 
+The widget is drawn at 1.1 times its original design size (`SCALE` in the file). To change that on
+one page, add `data-scale="1.2"` (or `1` for the original size) to the script tag. The chat button
+stays level with the site's back-to-top button at any scale.
+
 All widget styles are scoped under `#aug-chat`, so they won't affect the page's CSS. The only thing
 it writes to the browser is one sessionStorage flag: whether the visitor closed the greeting bubble.
 

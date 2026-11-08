@@ -79,8 +79,9 @@ seconds, with a link to the official page it came from.
    Mechanical?" The assistant uses the last few messages to understand the follow-up.
 
    ![A follow-up question showing the Mechanical Engineering contact](images/05_follow_up_card.jpg)
-9. **Clearing.** The **Clear** button erases the conversation. Reloading or leaving the page also
-   erases it.
+9. **Clearing.** The **Clear** button erases the conversation from the screen and starts a new one.
+   Reloading or leaving the page does the same. Saved messages (personal numbers removed) stay in
+   the database for the monthly recap.
 
 ---
 
