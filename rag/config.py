@@ -62,6 +62,11 @@ CHAT_LOG = os.environ.get("CHAT_LOG", "1") == "1"
 CHAT_LOG_DB = Path(os.environ.get("CHAT_LOG_DB", RAG_DIR / "data" / "chats.sqlite3"))
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 CHAT_LOG_RETENTION_DAYS = int(os.environ.get("CHAT_LOG_RETENTION_DAYS", "400"))
+# Monthly recap of the saved chats (see recap.py): stored in the same database and sent on
+# NOTIFY_CHANNEL to RECAP_TO (default: NOTIFY_TO). RECAP_AUTO=1 lets the server make last month's
+# recap by itself; set 0 when cron or Task Scheduler runs `python recap.py` instead.
+RECAP_AUTO = os.environ.get("RECAP_AUTO", "1") == "1"
+RECAP_TO = [a.strip() for a in os.environ.get("RECAP_TO", "").split(",") if a.strip()]
 
 # Staff notifications (see notify.py): none | email | webhook. Advancement chose email; it stays
 # "none" until the assistant is hosted so local testing never emails anyone.

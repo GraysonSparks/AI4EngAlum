@@ -16,6 +16,7 @@ import os
 import threading
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -27,10 +28,21 @@ import chatlog
 import config
 import leads
 import notify
+import recap
 import redact
 from rag import MAIN_CONTACT_CARD, Assistant
 
-app = FastAPI(title="AI4EngAlum Giving Assistant")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop = recap.start_auto()  # last month's recap, made once (RECAP_AUTO, see recap.py)
+    yield
+    if stop:
+        stop.set()
+
+
+app = FastAPI(title="AI4EngAlum Giving Assistant", lifespan=lifespan)
 
 # The test site is served from this app (same origin), so CORS only matters when chat-widget.js
 # is embedded on a page hosted somewhere else. Set CORS_ORIGINS="https://a.example,https://b.example" to allow those.

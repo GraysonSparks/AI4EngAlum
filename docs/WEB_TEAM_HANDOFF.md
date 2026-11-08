@@ -85,6 +85,8 @@ All settings are environment variables (defaults in `rag/config.py`):
 | `CONTACT_REQUESTS_FILE` | e.g. `/var/lib/ai4engalum/contact_requests.jsonl` | Where follow-up form submissions are saved (**personal data**: restrict who can read it). |
 | `CHAT_LOG_DB` | e.g. `/var/lib/ai4engalum/chats.sqlite3` | Saved chats (redacted). Or set `DATABASE_URL=postgresql://...` to use a PostgreSQL server. `CHAT_LOG=0` turns saving off. |
 | `CHAT_LOG_RETENTION_DAYS` | 400 (default) | Saved chats older than this are deleted. |
+| `RECAP_AUTO` | `1` (default), or `0` | `1`: the server emails and stores last month's recap by itself. Set `0` if several uvicorn workers run, and schedule `python recap.py` on the 1st instead. |
+| `RECAP_TO` | empty (default) | Recap recipients; empty means `NOTIFY_TO`. |
 | `UNANSWERED_SECRET` | a long random string | Signs unanswered questions. If unset, a new one is made each start, which is fine. |
 | `NOTIFY_CHANNEL` | `email` | Advancement chose email. Default `none` sends nothing. |
 | `NOTIFY_TO` | `elc0042@auburn.edu` (default) | Comma-separated recipients. |
@@ -133,6 +135,8 @@ it when the backend can't be reached).
 cd rag
 python test_contact.py               # 18 checks: form, consent, spam limits, /unanswered
 python test_notify.py                # 13 checks: email and webhook with a fake server
+python test_chatlog.py               # 28 checks: redaction and the saved-chat database
+python test_recap.py                 # 20 checks: the monthly recap
 python eval_models.py qwen3.5:9b     # 63 scored questions against the real model
 ```
 

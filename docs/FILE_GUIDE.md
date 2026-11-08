@@ -31,12 +31,14 @@ How to host it: [`WEB_TEAM_HANDOFF.md`](WEB_TEAM_HANDOFF.md). How to update the 
 | `notify.py` | Emails follow-up requests and unanswered questions to Ed (or whoever `NOTIFY_TO` names). | ✅ Needed |
 | `chatlog.py` | Saves each question and answer to the database (SQLite file, or PostgreSQL with `DATABASE_URL`), redacted. | ✅ Needed |
 | `redact.py` | Replaces emails, phone, Social Security, card and other long numbers with labels before anything is saved or emailed. | ✅ Needed |
+| `recap.py` | The monthly recap: emails it with a CSV of the month's chats and stores it in the database. Runs by itself (`RECAP_AUTO`) or from cron. | ✅ Needed |
 | `requirements.txt` | Exact Python package versions. | ✅ Needed |
 | `ingest.py` | Builds the search index (`chroma_db/`) from the content document and scraped pages. Run once at setup and after every content change, then restart. | 🔧 Upkeep |
 | `eval_models.py` | 63 scored test questions against the real model (right facts, right contact, no invented links). All should pass after any change. | 🧪 Testing |
 | `test_contact.py` | 18 checks of the follow-up form, consent, spam limits and `/unanswered`. | 🧪 Testing |
 | `test_notify.py` | 13 checks of the emails, using a fake mail server. | 🧪 Testing |
 | `test_chatlog.py` | 28 checks of redaction and the saved-chat database. | 🧪 Testing |
+| `test_recap.py` | 20 checks of the monthly recap, its storage and email. | 🧪 Testing |
 | `run_test_prompts.py` | Prints answers to the content document's "Suggested Initial Test Prompts" for reading by eye. | 🧪 Testing |
 | `requirements-windows.txt` | Package versions for the Windows laptop. | 💻 Laptop |
 | `README.md` | Developer setup and commands. | Reference |

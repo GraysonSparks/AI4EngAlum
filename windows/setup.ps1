@@ -96,7 +96,7 @@ try {
 
     # The checks print FAIL (capitals, at the start of a line) for a failed case; eval_models.py sets no exit code.
     # Case-sensitive on purpose: test_notify.py has a passing check named "a failed webhook doesn't raise".
-    $checks = @("test_contact.py", "test_notify.py", "test_chatlog.py")
+    $checks = @("test_contact.py", "test_notify.py", "test_chatlog.py", "test_recap.py")
     if (-not $SkipEval) { $checks += "eval_models.py" }
     $failed = @()
     foreach ($script in $checks) {

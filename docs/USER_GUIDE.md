@@ -134,6 +134,30 @@ questions that keep coming up. Each one is a candidate for a new answer in the c
 Off-topic questions ("who won the game?"), attempts to misuse the assistant and requests for private
 information are **not** emailed, so the inbox only gets genuine giving questions.
 
+### 3c. Monthly recap
+
+Sent once a month, soon after the 1st, for the month before. The same recap is also kept in the
+assistant's database.
+
+> **Subject:** Giving assistant: recap for 2026-10
+>
+> Conversations: 41
+> Questions: 97, answered from approved content: 88 (90%)
+> Follow-up requests through the form: 3
+>
+> Questions it could not answer (consider adding these to the content document):
+> - Can I give stock? (4x)
+> - ...
+>
+> Most-asked questions: ...
+> Most-cited pages: ...
+
+The email has a spreadsheet (CSV) attached with every question and answer of the month, with
+personal numbers and emails already removed. It opens in Excel.
+
+**What to do:** read the "could not answer" list. A question that comes up several times is the best
+candidate for a new answer in the content document (section 5).
+
 ---
 
 ## 4. Where follow-up requests are stored

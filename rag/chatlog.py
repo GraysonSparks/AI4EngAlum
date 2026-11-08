@@ -12,7 +12,8 @@ Where the rows go:
                                    (needs `pip install "psycopg[binary]"`)
 
 Rows older than CHAT_LOG_RETENTION_DAYS (default 400, so a full year of monthly recaps) are deleted
-when the server starts and each time a recap runs.
+when the server starts and each time a recap runs. The monthly recaps (recap.py) are stored in the
+`recaps` table of the same database.
 
 A database error never stops a visitor's chat: it is logged and the answer is still returned.
 """
@@ -47,6 +48,13 @@ SCHEMA = {
             redacted TEXT)""",
         "CREATE INDEX IF NOT EXISTS messages_at ON messages (at)",
         "CREATE INDEX IF NOT EXISTS messages_conversation ON messages (conversation)",
+        """CREATE TABLE IF NOT EXISTS recaps (
+            month TEXT PRIMARY KEY,
+            created TEXT NOT NULL,
+            conversations INTEGER,
+            questions INTEGER,
+            answered INTEGER,
+            summary TEXT)""",
     ],
     "postgres": [
         """CREATE TABLE IF NOT EXISTS messages (
@@ -61,6 +69,13 @@ SCHEMA = {
             redacted TEXT)""",
         "CREATE INDEX IF NOT EXISTS messages_at ON messages (at)",
         "CREATE INDEX IF NOT EXISTS messages_conversation ON messages (conversation)",
+        """CREATE TABLE IF NOT EXISTS recaps (
+            month TEXT PRIMARY KEY,
+            created TEXT NOT NULL,
+            conversations INTEGER,
+            questions INTEGER,
+            answered INTEGER,
+            summary TEXT)""",
     ],
 }
 

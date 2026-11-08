@@ -27,6 +27,8 @@ python routing.py                # print the staff routing table built from the 
 python test_contact.py           # checks the follow-up form, spam protection and /unanswered (18 checks)
 python test_notify.py            # checks notifications and unanswered emails with fake SMTP/webhook (13 checks)
 python test_chatlog.py           # checks redaction and the saved-chat database (28 checks)
+python test_recap.py             # checks the monthly recap, its storage and email (20 checks)
+python recap.py --print          # last month's recap on screen (nothing stored or sent)
 ```
 
 `POST /reload-rules` picks up edits to the doc's Response Rules without restarting the server
@@ -220,3 +222,30 @@ follow-up form, which keeps their email and phone with consent.
 Not caught: names, street addresses and dates of birth (no reliable pattern, and removing names
 would also remove the staff names the assistant gives). `python redact.py "<text>"` shows what a
 message would be saved as; `python test_chatlog.py` runs 28 checks.
+
+## Monthly recap (`recap.py`)
+
+Once a month, the saved chats are summed up for Advancement: conversation and question counts,
+the share answered from approved content, the questions it couldn't answer (most frequent first),
+the most-asked questions, the most-cited pages, follow-up form requests, and how much redaction
+removed. The recap is:
+
+- **emailed** to `RECAP_TO` (default `NOTIFY_TO`, which is Ed) on `NOTIFY_CHANNEL`, with every
+  message of the month attached as a CSV (already redacted). A webhook gets the summary as JSON,
+  without the CSV. With `NOTIFY_CHANNEL=none` nothing is sent;
+- **stored** in the `recaps` table of the chat database, one row per month. With `DATABASE_URL`
+  that table is on the PostgreSQL server, so the recaps are kept off the web server. Recaps hold
+  no names or contact details and are kept after old chats are deleted.
+
+With `RECAP_AUTO=1` (default) the server makes last month's recap by itself: it checks at
+start-up and every 6 hours and runs once if the month is missing from `recaps`. If more than one
+server process runs, or you prefer a scheduler, set `RECAP_AUTO=0` and run it on the 1st:
+
+```bash
+# cron, 6:00 AM on the 1st of each month
+0 6 1 * *  cd /opt/ai4engalum/rag && /opt/ai4engalum/venv/bin/python recap.py
+```
+
+On Windows, a Task Scheduler task that runs `python recap.py` in `rag\` does the same.
+`python recap.py --month 2026-10` redoes a month (it replaces that month's row and emails again);
+`--no-email` stores without sending; `--print` only prints.

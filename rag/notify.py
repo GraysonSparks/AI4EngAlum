@@ -70,12 +70,15 @@ def unanswered_text(questions: list[str]) -> tuple[str, str]:
     return subject, "\n".join(lines)
 
 
-def send_email(subject: str, body: str, to: list[str], reply_to: str | None = None) -> None:
+def send_email(subject: str, body: str, to: list[str], reply_to: str | None = None,
+               attachments: list[tuple[str, bytes]] = ()) -> None:
     msg = EmailMessage()
     msg["Subject"], msg["From"], msg["To"] = subject, config.NOTIFY_FROM, ", ".join(to)
     if reply_to:
         msg["Reply-To"] = reply_to  # staff can reply straight to the visitor
     msg.set_content(body)
+    for name, data in attachments:  # the monthly recap's CSV (recap.py)
+        msg.add_attachment(data, maintype="text", subtype="csv", filename=name)
     with smtplib.SMTP(config.SMTP_HOST, config.SMTP_PORT, timeout=20) as smtp:
         if config.SMTP_STARTTLS:
             smtp.starttls()
@@ -92,12 +95,13 @@ def send_webhook(subject: str, body: str, extra: dict) -> None:
 
 
 def _deliver(subject: str, body: str, to: list[str], extra: dict,
-             reply_to: str | None = None) -> str:
+             reply_to: str | None = None, attachments: list[tuple[str, bytes]] = ()) -> str:
+    """Send on the configured channel. A webhook gets no attachments."""
     channel = config.NOTIFY_CHANNEL
     if channel == "email":
         if not to:
             raise ValueError("NOTIFY_CHANNEL=email but NOTIFY_TO is empty")
-        send_email(subject, body, to, reply_to)
+        send_email(subject, body, to, reply_to, attachments)
     elif channel == "webhook":
         send_webhook(subject, body, extra)
     elif channel != "none":
