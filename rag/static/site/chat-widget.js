@@ -49,12 +49,12 @@
   #aug-chat .teaser::after{content:"";position:absolute;right:26px;bottom:-7px;width:14px;height:14px;background:#fff;transform:rotate(45deg);}
   #aug-chat .teaser-close{position:absolute;top:6px;right:8px;border:none;background:none;color:#8a93a0;font-size:16px;line-height:1;cursor:pointer;padding:4px;}
   #aug-chat .teaser-close:hover{color:#1d232c;}
-  #aug-chat .toggle{width:60px;height:60px;border-radius:50%;background:var(--orange);border:none;cursor:pointer;flex:none;
-    box-shadow:0 8px 22px rgba(204,78,11,.4);display:flex;align-items:center;justify-content:center;position:relative;
+  #aug-chat .toggle{width:72px;height:72px;border-radius:50%;background:var(--orange);border:none;cursor:pointer;flex:none;
+    box-shadow:0 10px 26px rgba(204,78,11,.42);display:flex;align-items:center;justify-content:center;position:relative;
     transition:transform .15s ease,background .15s ease;}
   #aug-chat .toggle:hover{background:var(--orange-hi);transform:translateY(-2px);}
-  #aug-chat .toggle svg{width:26px;height:26px;}
-  #aug-chat .ping{position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:#2bb673;border:2px solid #fff;}
+  #aug-chat .toggle svg{width:34px;height:34px;}
+  #aug-chat .ping{position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#2bb673;border:2px solid #fff;}
   #aug-chat .panel{position:fixed;right:26px;bottom:26px;width:380px;max-width:calc(100vw - 32px);height:560px;
     max-height:calc(100vh - 52px);min-width:300px;min-height:340px;background:var(--navy-deep);border-radius:16px;
     box-shadow:0 24px 60px rgba(0,0,0,.35);z-index:2147483001;display:flex;flex-direction:column;overflow:hidden;
