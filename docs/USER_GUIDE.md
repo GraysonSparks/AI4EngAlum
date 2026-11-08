@@ -38,7 +38,7 @@ seconds, with a link to the official page it came from.
 
 ## 2. What visitors see
 
-1. **The launcher.** An orange chat button in the bottom-right corner. Shortly after the page loads,
+1. **The launcher.** An orange chat button in the bottom-left corner, on the same line as the page's "back to top" button. Shortly after the page loads,
    a bubble says *"Questions about giving to Auburn Engineering? I can help."* Visitors can close it.
 
    ![The launcher and greeting bubble](images/01_launcher.jpg)

@@ -10,7 +10,7 @@ file and marks which ones a deployment needs.
 ## What it is
 
 - A **chat widget** (`rag/static/site/chat-widget.js`, one file, no dependencies) that sits at the
-  bottom right of a page.
+  bottom left of a page, level with the site's "back to top" button (`TOP_BUTTON_MID` in the file).
 - A **Python backend** (FastAPI) that answers giving questions using only approved content: the
   curated content document in `content/` and text copies of the official giving pages in
   `scraped_pages/`.

@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 </head>
-<body>
+<body id="top">
 <div class="mock-banner"><strong>Team 21 test mock</strong> — not an official Auburn University site. Built to test the AI4EngAlum giving assistant. Give buttons link to the real Auburn giving pages.</div>
 
 <header>
@@ -169,6 +169,8 @@
   </div>
 </footer>
 
+<div class="to-top"><a href="#top" aria-label="Back to top"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/></svg></a></div>
+<script>(function(){var t=document.querySelector('.to-top');function f(){t.classList.toggle('show',scrollY>400);}addEventListener('scroll',f,{passive:true});f();})();</script>
 <script src="chat-widget.js" defer></script>
 </body>
 </html>

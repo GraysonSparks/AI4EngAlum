@@ -7,6 +7,10 @@
  * data-endpoint="https://.../chat" on the script tag). All styles are scoped under
  * #aug-chat so they can't clash with the host page's CSS.
  *
+ * The chat button sits bottom-left, on the same line as the giving site's "back to top" button
+ * (bottom-right, 42x38 px, 36 px from the bottom, so its center is 55 px up). Change TOP_BUTTON_MID
+ * if the site moves that button.
+ *
  * Privacy: the conversation lives only in this page's memory. It is never written to
  * localStorage, sessionStorage, or cookies, and it is gone on reload, navigation, tab close, or
  * "Clear". Recent turns are sent with each request so the assistant can follow up; the server
@@ -36,32 +40,34 @@
   const IDLE_REPORT_MS = 10 * 60 * 1000; // send unanswered questions after this long without a new one
   const TEASER_KEY = 'aug-chat-teaser-dismissed'; // the only thing stored: a yes/no UI flag
   const HISTORY_SENT = 6; // most recent messages sent with each request
+  const TOP_BUTTON_MID = 55; // px from the viewport bottom to the center of the site's back-to-top button
 
   const css = `
-  #aug-chat{--navy:#0b2341;--navy-deep:#071830;--orange:#cc4e0b;--orange-hi:#e86100;
+  #aug-chat{--toggle:72px;--navy:#0b2341;--navy-deep:#071830;--orange:#cc4e0b;--orange-hi:#e86100;
     font-family:'Source Sans 3',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;}
   #aug-chat *{box-sizing:border-box;}
-  #aug-chat .launcher{position:fixed;right:26px;bottom:26px;z-index:2147483000;display:flex;align-items:flex-end;gap:12px;}
+  #aug-chat .launcher{position:fixed;left:22px;bottom:calc(${TOP_BUTTON_MID}px - var(--toggle) / 2);z-index:2147483000;display:flex;
+    flex-direction:row-reverse;align-items:flex-end;gap:12px;}
   #aug-chat .teaser{background:#fff;color:#1d232c;max-width:250px;padding:14px 34px 14px 16px;border-radius:14px;
     box-shadow:0 10px 30px rgba(11,35,65,.22);font-size:15px;line-height:1.4;position:relative;cursor:pointer;
     opacity:0;transform:translateY(8px) scale(.97);transition:opacity .35s ease,transform .35s ease;pointer-events:none;}
   #aug-chat .teaser.show{opacity:1;transform:none;pointer-events:auto;}
-  #aug-chat .teaser::after{content:"";position:absolute;right:26px;bottom:-7px;width:14px;height:14px;background:#fff;transform:rotate(45deg);}
+  #aug-chat .teaser::after{content:"";position:absolute;left:26px;bottom:-7px;width:14px;height:14px;background:#fff;transform:rotate(45deg);}
   #aug-chat .teaser-close{position:absolute;top:6px;right:8px;border:none;background:none;color:#8a93a0;font-size:16px;line-height:1;cursor:pointer;padding:4px;}
   #aug-chat .teaser-close:hover{color:#1d232c;}
-  #aug-chat .toggle{width:72px;height:72px;border-radius:50%;background:var(--orange);border:none;cursor:pointer;flex:none;
+  #aug-chat .toggle{width:var(--toggle);height:var(--toggle);border-radius:50%;background:var(--orange);border:none;cursor:pointer;flex:none;
     box-shadow:0 10px 26px rgba(204,78,11,.42);display:flex;align-items:center;justify-content:center;position:relative;
     transition:transform .15s ease,background .15s ease;}
   #aug-chat .toggle:hover{background:var(--orange-hi);transform:translateY(-2px);}
   #aug-chat .toggle svg{width:34px;height:34px;}
   #aug-chat .ping{position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#2bb673;border:2px solid #fff;}
-  #aug-chat .panel{position:fixed;right:26px;bottom:26px;width:380px;max-width:calc(100vw - 32px);height:560px;
+  #aug-chat .panel{position:fixed;left:22px;bottom:26px;width:380px;max-width:calc(100vw - 32px);height:560px;
     max-height:calc(100vh - 52px);min-width:300px;min-height:340px;background:var(--navy-deep);border-radius:16px;
     box-shadow:0 24px 60px rgba(0,0,0,.35);z-index:2147483001;display:flex;flex-direction:column;overflow:hidden;
     transform:translateY(24px) scale(.96);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;}
   #aug-chat .panel.open{opacity:1;transform:none;pointer-events:auto;}
   #aug-chat .panel.resizing{transition:none;}
-  #aug-chat .resize{position:absolute;left:6px;top:6px;width:16px;height:16px;cursor:nwse-resize;z-index:5;opacity:.55;}
+  #aug-chat .resize{position:absolute;right:6px;top:6px;width:16px;height:16px;cursor:nesw-resize;z-index:5;opacity:.55;}
   #aug-chat .resize svg{width:100%;height:100%;stroke:#8aa0c4;stroke-width:1.5;}
   #aug-chat .resize:hover{opacity:.9;}
   #aug-chat .head{padding:18px 18px 16px;display:flex;align-items:center;gap:12px;
@@ -142,7 +148,7 @@
   #aug-chat .foot button{background:none;border:none;color:#8aa0c4;font:inherit;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;}
   @media (max-width:460px){
     #aug-chat .panel{right:0;bottom:0;left:0;width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0;}
-    #aug-chat .launcher{right:16px;bottom:16px;}
+    #aug-chat .launcher{left:16px;bottom:16px;}
     #aug-chat .resize{display:none;}
     #aug-chat .expand{display:none;}
     #aug-chat .teaser{max-width:200px;}
@@ -168,7 +174,7 @@
       </button>
     </div>
     <div class="panel" role="dialog" aria-modal="false" aria-label="Auburn Engineering Giving Assistant">
-      <div class="resize" title="Drag to resize" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M14 2 L2 14 M9 2 L2 9 M14 7 L7 14"/></svg></div>
+      <div class="resize" title="Drag to resize" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M2 2 L14 14 M7 2 L14 9 M2 7 L9 14"/></svg></div>
       <div class="head">
         <div class="avatar"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">${BUBBLE_ICON}</svg></div>
         <div class="head-text"><div class="name">Engineering Giving Assistant<span class="ai-tag">AI</span></div><div class="status">AI assistant · Online now</div></div>
@@ -506,7 +512,7 @@
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const v = input.value; input.value = ''; ask(v); } });
   $('.reset').addEventListener('click', () => { reportUnanswered(); state.history = []; renderAll(); });
 
-  // ---- Drag-to-resize (panel is anchored bottom-right, so the grip is top-left) ----
+  // ---- Drag-to-resize (panel is anchored bottom-left, so the grip is top-right) ----
   const MIN_W = 300, MIN_H = 340;
   let drag = null;
   $('.resize').addEventListener('pointerdown', (e) => {
@@ -518,7 +524,7 @@
   });
   document.addEventListener('pointermove', (e) => {
     if (!drag) return;
-    const w = Math.min(Math.max(drag.w + drag.x - e.clientX, MIN_W), Math.min(640, window.innerWidth - 32));
+    const w = Math.min(Math.max(drag.w + e.clientX - drag.x, MIN_W), Math.min(640, window.innerWidth - 32));
     const h = Math.min(Math.max(drag.h + drag.y - e.clientY, MIN_H), Math.min(window.innerHeight - 32, 760));
     panel.style.width = w + 'px';
     panel.style.height = h + 'px';

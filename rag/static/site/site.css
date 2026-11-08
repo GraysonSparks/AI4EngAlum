@@ -207,3 +207,11 @@ footer.site .fine{flex-basis:100%;border-top:1px solid rgba(255,255,255,.12);pad
   section.block{padding:48px 0;}
   .wrap{padding:0 16px;}
 }
+
+/* Copy of the live site's back-to-top button (Bootstrap btn-light, 42x38, right 21.6px, bottom 36px).
+   Shown after scrolling, like the real one; the chat button lines up with it on the left. */
+.to-top{position:fixed;right:21.6px;bottom:36px;z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+.to-top.show{opacity:1;pointer-events:auto;}
+.to-top a{display:flex;align-items:center;justify-content:center;width:42px;height:38px;background:#f8f9fa;
+  border:1px solid #f8f9fa;border-radius:6px;color:#212529;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.to-top a:hover{background:#e2e6ea;}
