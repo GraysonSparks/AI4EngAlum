@@ -54,7 +54,7 @@ def main():
              redacted={"phone": 1})
         turn("d", "2026-10-31T23:00:00+00:00", "What's the weather?", False)  # off-topic: not unanswered
         turn("d", "2026-10-31T23:30:00+00:00", "Please call me at 334-555-0123", True)
-        turn("d", "2026-10-31T23:31:00+00:00", "Is Ed's number 334.844.1488?", True)  # public: not listed
+        turn("d", "2026-10-31T23:31:00+00:00", f"Is Ed's number {config.FALLBACK_PHONE}?", True)  # public: not listed
         turn("e", "2026-11-01T00:00:00+00:00", "November question", True)   # next month
         turn("f", "2026-09-30T23:59:59+00:00", "September question", True)  # previous month
 

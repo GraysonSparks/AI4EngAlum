@@ -40,7 +40,7 @@
     new URL('/chat', script ? script.src : location.href).href;
   const CONTACT_ENDPOINT = (script && script.dataset.contactEndpoint) || new URL('contact', ENDPOINT).href;
   const UNANSWERED_ENDPOINT = (script && script.dataset.unansweredEndpoint) || new URL('unanswered', ENDPOINT).href;
-  const MAIN_CONTACT = 'Ed Collari, Executive Director of Development, at elc0042@auburn.edu or 334.844.1488';
+  const MAIN_CONTACT = 'Ed Collari, Executive Director of Development, at elc0042@auburn.edu or 770-367-5986';
   const FALLBACK_REPLY = "I'm having trouble reaching the assistant right now. For help, please contact " + MAIN_CONTACT + '.';
   const IDLE_REPORT_MS = 10 * 60 * 1000; // send unanswered questions after this long without a new one
   const TEASER_KEY = 'aug-chat-teaser-dismissed'; // the only thing stored: a yes/no UI flag

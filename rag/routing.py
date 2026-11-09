@@ -164,10 +164,14 @@ if __name__ == "__main__":
         print(f"NO MATCH in the staff directory for: {topic}")
     missing = [kw for kw in DEPARTMENT_KEYWORDS if kw not in _liaisons()]
     print(f"\n{len(routes)} routes. Departments with no listed liaison: {', '.join(missing) or 'none'}")
-    # The main contact is set in config.py, not read from the directory; flag it going stale.
+    # The main contact is set in config.py, not read from the directory; flag it going stale. The
+    # phone is config's on purpose (Ed's cell), so only the name and email are compared.
     main = next((p for p in _staff_records() if p["name"] == config.FALLBACK_NAME), None)
     if not main:
         print(f"WARNING: main contact {config.FALLBACK_NAME} is no longer in the staff directory")
-    elif (main["email"], main["phone"]) != (config.FALLBACK_EMAIL, config.FALLBACK_PHONE):
-        print(f"WARNING: main contact details in config.py ({config.FALLBACK_EMAIL}, "
-              f"{config.FALLBACK_PHONE}) differ from the directory ({main['email']}, {main['phone']})")
+    elif main["email"] != config.FALLBACK_EMAIL:
+        print(f"WARNING: main contact email in config.py ({config.FALLBACK_EMAIL}) differs from the "
+              f"directory ({main['email']})")
+    else:
+        print(f"Main contact {config.FALLBACK_NAME}: phone {config.FALLBACK_PHONE} from config.py "
+              f"(directory lists {main.get('directory_phone')})")

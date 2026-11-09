@@ -203,6 +203,11 @@ def _staff_records() -> list[dict]:
                                 if not l.startswith("Office of") and l != room
                                 and not EMAIL.fullmatch(l) and not PHONE.fullmatch(l)),
         })
+    # The main contact's number comes from config.FALLBACK_PHONE (Ed chose his cell), so his staff
+    # entry, liaison cards and answers all give the same number.
+    for r in records:
+        if (r["email"] or "").lower() == config.FALLBACK_EMAIL.lower():
+            r["directory_phone"], r["phone"] = r["phone"], config.FALLBACK_PHONE
     return records
 
 

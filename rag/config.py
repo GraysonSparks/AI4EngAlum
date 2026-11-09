@@ -54,7 +54,9 @@ CONTACT_REQUESTS_FILE = Path(os.environ.get("CONTACT_REQUESTS_FILE",
 FALLBACK_NAME = os.environ.get("FALLBACK_NAME", "Ed Collari")
 FALLBACK_TITLE = os.environ.get("FALLBACK_TITLE", "Executive Director of Development")
 FALLBACK_EMAIL = os.environ.get("FALLBACK_EMAIL", "elc0042@auburn.edu")
-FALLBACK_PHONE = os.environ.get("FALLBACK_PHONE", "334.844.1488")
+# Ed asked (November 2026) for his cell, not his office line (334.844.1488 in the directory), so
+# this number replaces the directory's everywhere the assistant gives his details (see content.py).
+FALLBACK_PHONE = os.environ.get("FALLBACK_PHONE", "770-367-5986")
 FALLBACK_CONTACT = f"{FALLBACK_NAME}, {FALLBACK_TITLE}, at {FALLBACK_EMAIL} or {FALLBACK_PHONE}"
 # Auburn's central giving office (give.auburn.edu: "For additional giving options or if you have
 # questions..."), named after the main contact when a visitor asks who to contact in general.

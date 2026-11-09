@@ -68,8 +68,9 @@ fixed instructions for grounding, the tax/legal refusal, prompt-injection handli
 **Main contact.** Advancement chose Ed Collari (Executive Director of Development) as the main point of
 contact instead of the general giving office. Every dead end, and every "can someone contact me?",
 gives his details first and then offers to have him reach out (the follow-up form) as the second
-option. He also receives every notification. His details are `FALLBACK_*` in `config.py`; `python routing.py` warns if
-they stop matching his staff directory entry. Answers taken from the content doc still give whatever
+option. He also receives every notification. His details are `FALLBACK_*` in `config.py`. His phone is his cell, 770-367-5986, at his
+request; it replaces the office number from the staff directory everywhere, including his staff
+entry and liaison cards. `python routing.py` warns if his name or email stop matching the directory. Answers taken from the content doc still give whatever
 contact the doc lists (for example the giving office for bank drafts).
 
 ## Guardrails outside the prompt
