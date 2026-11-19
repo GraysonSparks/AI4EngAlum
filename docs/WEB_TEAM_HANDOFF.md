@@ -10,7 +10,8 @@ file and marks which ones a deployment needs.
 ## What it is
 
 - A **chat widget** (`rag/static/site/chat-widget.js`, one file, no dependencies) that sits at the
-  bottom left of a page, level with the site's "back to top" button (`TOP_BUTTON_MID` in the file).
+  bottom right of a page, above the site's "back to top" button so it never covers it
+  (`TOP_BUTTON` in the file; `data-side="left"` puts it at the bottom left instead).
 - A **Python backend** (FastAPI) that answers giving questions using only approved content: the
   curated content document in `content/` and text copies of the official giving pages in
   `scraped_pages/`.
@@ -54,7 +55,8 @@ path, point it there:
 
 The widget is drawn at 1.1 times its original design size (`SCALE` in the file). To change that on
 one page, add `data-scale="1.2"` (or `1` for the original size) to the script tag. The chat button
-stays level with the site's back-to-top button at any scale.
+stays clear of the site's back-to-top button at any scale. To put the chat on the left, add
+`data-side="left"`; there it is level with the back-to-top button.
 
 All widget styles are scoped under `#aug-chat`, so they won't affect the page's CSS. The only thing
 it writes to the browser is one sessionStorage flag: whether the visitor closed the greeting bubble.

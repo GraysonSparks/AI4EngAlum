@@ -7,9 +7,11 @@
  * data-endpoint="https://.../chat" on the script tag). All styles are scoped under
  * #aug-chat so they can't clash with the host page's CSS.
  *
- * The chat button sits bottom-left, on the same line as the giving site's "back to top" button
- * (bottom-right, 42x38 px, 36 px from the bottom, so its center is 55 px up). Change TOP_BUTTON_MID
- * if the site moves that button.
+ * Placement: data-side="right" (the default) or data-side="left" on the script tag.
+ * The giving site has a "back to top" button at the bottom right (42x38 px, 21.6 px from the right,
+ * 36 px from the bottom). On the right, the chat button and the open panel sit above that button,
+ * so they never cover it. On the left, the chat button is level with it. Change TOP_BUTTON if the
+ * site moves that button.
  *
  * Size: every size in the widget (button, panel, text, spacing) is multiplied by SCALE (1.1).
  * Override it per page with data-scale="1.2" on the script tag.
@@ -47,7 +49,10 @@
   const HISTORY_SENT = 6; // most recent messages sent with each request
   // Shown in the footer. If the server runs with CHAT_LOG=0, set this to ''.
   const SAVE_NOTICE = 'Chats are saved to improve answers. Card, Social Security and account numbers are removed; please don\'t share them.';
-  const TOP_BUTTON_MID = 55; // px from the viewport bottom to the center of the site's back-to-top button
+  // The site's back-to-top button, in px: distance from the right edge, from the bottom, and height.
+  const TOP_BUTTON = { right: 21.6, bottom: 36, height: 38 };
+  const TOP_BUTTON_GAP = 14; // px between the top of that button and the chat (right side)
+  const SIDE = (script && script.dataset.side) === 'left' ? 'left' : 'right';
   const SCALE = Number(script && script.dataset.scale) || 1.1; // widget size; 1 = the original design
   // Multiply every px size of 3 or more in the styles by SCALE. 1-2 px borders stay sharp, and the
   // phone breakpoint (max-width) and the back-to-top alignment are page geometry, not widget size.
@@ -167,7 +172,25 @@
     #aug-chat .teaser{max-width:200px;}
   }
   @media (prefers-reduced-motion:reduce){#aug-chat .teaser,#aug-chat .panel,#aug-chat .toggle{transition:none;}}`)
-  + `#aug-chat{--top-mid:${TOP_BUTTON_MID}px;}`;
+  + sideCss();
+
+  // Page geometry (not scaled): where the launcher and panel sit for the chosen side.
+  function sideCss() {
+    const mid = TOP_BUTTON.bottom + TOP_BUTTON.height / 2;
+    if (SIDE === 'left') {
+      return `#aug-chat{--top-mid:${mid}px;}`;
+    }
+    const above = TOP_BUTTON.bottom + TOP_BUTTON.height + TOP_BUTTON_GAP;
+    const half = +(7 * SCALE).toFixed(2); // half the 14 px tail, so it sits on the bubble's edge
+    // The bubble is centered on the button, with its tail on the right edge pointing at the button.
+    return `
+  #aug-chat .launcher{left:auto;right:${TOP_BUTTON.right}px;bottom:${above}px;flex-direction:row;align-items:center;}
+  #aug-chat .teaser::after{left:auto;bottom:auto;right:-${half}px;top:calc(50% - ${half}px);}
+  #aug-chat .panel{left:auto;right:${TOP_BUTTON.right}px;bottom:${above}px;max-height:calc(100vh - ${above + 26}px);}
+  #aug-chat .resize{right:auto;left:6px;cursor:nwse-resize;transform:scaleX(-1);}
+  @media (max-width:460px){#aug-chat .launcher{left:auto;right:16px;bottom:${above}px;}
+    #aug-chat .panel{right:0;bottom:0;left:0;max-height:100%;}}`;
+  }
 
   const BUBBLE_ICON = '<path d="M21 11.5c0 4.14-4.03 7.5-9 7.5-1.06 0-2.08-.15-3.02-.43L4 20l1.06-3.18C4.4 15.6 4 14.6 4 13.5 4 9.36 8.03 6 13 6s9 3.36 9 5.5z"/>';
   const GREETING = "Hi! I'm the Auburn Engineering giving assistant, an AI tool. I can help with ways to give, supporting a specific department, the EAGLE Society, or finding the right person on our advancement team.";
@@ -531,7 +554,7 @@
     reportUnanswered(); state.history = []; state.conversationId = newId(); renderAll();
   });
 
-  // ---- Drag-to-resize (panel is anchored bottom-left, so the grip is top-right) ----
+  // ---- Drag-to-resize (the grip is the top corner away from the screen edge) ----
   const MIN_W = 300 * SCALE, MIN_H = 340 * SCALE, MAX_W = 640 * SCALE, MAX_H = 760 * SCALE;
   let drag = null;
   $('.resize').addEventListener('pointerdown', (e) => {
@@ -543,7 +566,8 @@
   });
   document.addEventListener('pointermove', (e) => {
     if (!drag) return;
-    const w = Math.min(Math.max(drag.w + e.clientX - drag.x, MIN_W), Math.min(MAX_W, window.innerWidth - 32));
+    const dx = SIDE === 'left' ? e.clientX - drag.x : drag.x - e.clientX;
+    const w = Math.min(Math.max(drag.w + dx, MIN_W), Math.min(MAX_W, window.innerWidth - 32));
     const h = Math.min(Math.max(drag.h + drag.y - e.clientY, MIN_H), Math.min(window.innerHeight - 32, MAX_H));
     panel.style.width = w + 'px';
     panel.style.height = h + 'px';
